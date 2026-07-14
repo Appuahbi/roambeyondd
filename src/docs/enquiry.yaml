@@ -1,0 +1,336 @@
+tags:
+  - name: Enquiries
+    description: Tour enquiry and lead management APIs
+
+/enquiries:
+  post:
+    tags:
+      - Enquiries
+    summary: Submit a tour enquiry
+    description: Creates a new enquiry for a selected tour package. Customer details are auto-populated from the logged-in user's profile.
+    security:
+      - bearerAuth: []
+
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - tourPackage
+              - travelDate
+              - adults
+            properties:
+              tourPackage:
+                type: string
+                description: Tour package MongoDB ID
+                example: "6864c31ad45b0d1234567890"
+              travelDate:
+                type: string
+                format: date
+                description: Intended travel date
+                example: "2026-08-15"
+              adults:
+                type: integer
+                minimum: 1
+                description: Number of adults (at least 1)
+                example: 2
+              children:
+                type: integer
+                minimum: 0
+                default: 0
+                description: Number of children
+                example: 1
+              notes:
+                type: string
+                maxLength: 1000
+                description: Any additional notes or requirements
+                example: Need pickup from airport
+
+    responses:
+      "201":
+        description: Enquiry created successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                message:
+                  type: string
+                  example: Enquiry submitted successfully
+                data:
+                  $ref: "#/components/schemas/Enquiry"
+      "400":
+        description: Validation failed
+      "401":
+        description: Unauthorized
+      "404":
+        description: Tour package not found
+
+  get:
+    tags:
+      - Enquiries
+    summary: Get logged-in user's enquiries
+    description: Returns all enquiries created by the logged-in user, sorted by newest first.
+    security:
+      - bearerAuth: []
+
+    responses:
+      "200":
+        description: Enquiries fetched successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                message:
+                  type: string
+                  example: Enquiries fetched successfully
+                data:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/Enquiry"
+      "401":
+        description: Unauthorized
+
+/admin/enquiries:
+  get:
+    tags:
+      - Admin
+    summary: Get all enquiries (admin)
+    description: Returns a paginated list of all enquiries with optional filtering by lead status, lead source, and search.
+    security:
+      - bearerAuth: []
+
+    parameters:
+      - in: query
+        name: page
+        schema:
+          type: integer
+          default: 1
+        description: Page number
+        example: 1
+
+      - in: query
+        name: limit
+        schema:
+          type: integer
+          default: 10
+        description: Items per page
+        example: 10
+
+      - in: query
+        name: leadStatus
+        schema:
+          type: string
+          enum:
+            - New
+            - Contacted
+            - Quotation Sent
+            - Negotiating
+            - Booked
+            - Closed
+        description: Filter by lead status
+
+      - in: query
+        name: leadSource
+        schema:
+          type: string
+          enum:
+            - Website
+            - Instagram
+            - Facebook
+            - WhatsApp
+            - Referral
+            - Walk-in
+            - Phone
+        description: Filter by lead source
+
+      - in: query
+        name: search
+        schema:
+          type: string
+        description: Search by customer name or email
+        example: Rahul
+
+      - in: query
+        name: sort
+        schema:
+          type: string
+          enum:
+            - latest
+            - oldest
+        default: latest
+        description: Sort order
+
+    responses:
+      "200":
+        description: All enquiries fetched successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                message:
+                  type: string
+                  example: All enquiries fetched successfully
+                total:
+                  type: integer
+                  example: 45
+                page:
+                  type: integer
+                  example: 1
+                totalPages:
+                  type: integer
+                  example: 5
+                enquiries:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/Enquiry"
+      "401":
+        description: Unauthorized
+      "403":
+        description: Admin access required
+
+/enquiries/{id}:
+  get:
+    tags:
+      - Enquiries
+    summary: Get enquiry by ID
+    description: Returns a single enquiry. Only the enquiry owner or an admin can view it.
+    security:
+      - bearerAuth: []
+
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+        description: Enquiry MongoDB ID
+
+    responses:
+      "200":
+        description: Enquiry fetched successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                message:
+                  type: string
+                  example: Enquiry fetched successfully
+                data:
+                  $ref: "#/components/schemas/Enquiry"
+      "401":
+        description: Unauthorized
+      "403":
+        description: Not authorized to view this enquiry
+      "404":
+        description: Enquiry not found
+
+/admin/enquiries/{id}:
+  patch:
+    tags:
+      - Admin
+    summary: Update an enquiry (admin)
+    description: Updates enquiry lead status, source, priority, or follow-up date. Automatically sets lastContactedAt when status changes to Contacted. Requires admin privileges.
+    security:
+      - bearerAuth: []
+
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+        description: Enquiry MongoDB ID
+
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              leadStatus:
+                type: string
+                enum:
+                  - New
+                  - Contacted
+                  - Quotation Sent
+                  - Negotiating
+                  - Booked
+                  - Closed
+                description: Current status of the lead
+              leadSource:
+                type: string
+                enum:
+                  - Website
+                  - Instagram
+                  - Facebook
+                  - WhatsApp
+                  - Referral
+                  - Walk-in
+                  - Phone
+                description: How the lead was acquired
+              priority:
+                type: string
+                enum:
+                  - Low
+                  - Medium
+                  - High
+                description: Priority level of the enquiry
+              followUpDate:
+                type: string
+                format: date
+                nullable: true
+                description: Scheduled follow-up date
+                example: "2026-08-20"
+              lastContactedAt:
+                type: string
+                format: date-time
+                nullable: true
+                description: Last contact timestamp (auto-set when leadStatus changes to Contacted)
+              remarks:
+                type: string
+                maxLength: 1000
+                description: Internal notes or remarks about the enquiry
+
+    responses:
+      "200":
+        description: Enquiry updated successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                message:
+                  type: string
+                  example: Enquiry updated successfully
+                data:
+                  $ref: "#/components/schemas/Enquiry"
+      "400":
+        description: Validation failed
+      "401":
+        description: Unauthorized
+      "403":
+        description: Admin access required
+      "404":
+        description: Enquiry not found

@@ -1,0 +1,328 @@
+tags:
+  - name: Contact Requests
+    description: General customer contact request APIs
+
+/contact:
+  post:
+    tags:
+      - Contact Requests
+    summary: Submit a contact request
+    description: Allows a visitor to send a general enquiry to the travel agency. This is a public endpoint — no authentication required.
+    security: []
+
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - name
+              - email
+              - phone
+              - subject
+              - message
+            properties:
+              name:
+                type: string
+                minLength: 3
+                maxLength: 100
+                example: Rahul Sharma
+              email:
+                type: string
+                format: email
+                example: rahul@example.com
+              phone:
+                type: string
+                pattern: "^[6-9]\\d{9}$"
+                description: 10-digit Indian mobile number starting with 6-9
+                example: "9876543210"
+              subject:
+                type: string
+                minLength: 5
+                maxLength: 150
+                example: Corporate Tour Inquiry
+              message:
+                type: string
+                minLength: 10
+                maxLength: 1000
+                example: We are planning a corporate trip for 40 employees to Rajasthan
+              source:
+                type: string
+                enum:
+                  - Website
+                  - WhatsApp
+                  - Phone
+                  - Email
+                  - Instagram
+                  - Facebook
+                default: Website
+                description: How the visitor found you
+                example: Website
+
+    responses:
+      "201":
+        description: Contact request submitted successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                message:
+                  type: string
+                  example: Contact request submitted successfully
+                data:
+                  $ref: "#/components/schemas/ContactRequest"
+      "400":
+        description: Validation failed
+
+/contact/admin:
+  get:
+    tags:
+      - Lead Management
+    summary: Get all contact requests (admin)
+    description: Returns a paginated list of all contact requests with optional filtering by status, source, and search.
+    security:
+      - bearerAuth: []
+
+    parameters:
+      - in: query
+        name: page
+        schema:
+          type: integer
+          default: 1
+        description: Page number
+        example: 1
+
+      - in: query
+        name: limit
+        schema:
+          type: integer
+          default: 10
+        description: Items per page
+        example: 10
+
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+            - New
+            - Contacted
+            - Resolved
+            - Closed
+        description: Filter by status
+
+      - in: query
+        name: source
+        schema:
+          type: string
+          enum:
+            - Website
+            - WhatsApp
+            - Phone
+            - Email
+            - Instagram
+            - Facebook
+        description: Filter by source
+
+      - in: query
+        name: search
+        schema:
+          type: string
+        description: Search by name, email, or phone
+        example: Rahul
+
+      - in: query
+        name: sort
+        schema:
+          type: string
+          enum:
+            - latest
+            - oldest
+        default: latest
+        description: Sort order
+
+    responses:
+      "200":
+        description: Contact requests fetched successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                message:
+                  type: string
+                  example: Contact requests fetched successfully
+                total:
+                  type: integer
+                  example: 30
+                page:
+                  type: integer
+                  example: 1
+                totalPages:
+                  type: integer
+                  example: 3
+                contactRequests:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/ContactRequest"
+      "401":
+        description: Unauthorized
+      "403":
+        description: Admin access required
+
+/contact/admin/{id}:
+  get:
+    tags:
+      - Lead Management
+    summary: Get a contact request by ID
+    security:
+      - bearerAuth: []
+
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+        description: Contact request MongoDB ID
+
+    responses:
+      "200":
+        description: Contact request fetched successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                message:
+                  type: string
+                  example: Contact request fetched successfully
+                data:
+                  $ref: "#/components/schemas/ContactRequest"
+      "401":
+        description: Unauthorized
+      "403":
+        description: Admin access required
+      "404":
+        description: Contact request not found
+
+  patch:
+    tags:
+      - Lead Management
+    summary: Update a contact request (admin)
+    description: Updates status, remarks, or source of a contact request. At least one field must be provided.
+    security:
+      - bearerAuth: []
+
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+        description: Contact request MongoDB ID
+
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            minProperties: 1
+            properties:
+              status:
+                type: string
+                enum:
+                  - New
+                  - Contacted
+                  - Resolved
+                  - Closed
+                description: Request status
+              remarks:
+                type: string
+                maxLength: 1000
+                description: Admin remarks
+                example: Customer requested a callback tomorrow
+              source:
+                type: string
+                enum:
+                  - Website
+                  - WhatsApp
+                  - Phone
+                  - Email
+                  - Instagram
+                  - Facebook
+                description: Source of the request
+
+    responses:
+      "200":
+        description: Contact request updated successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                message:
+                  type: string
+                  example: Contact request updated successfully
+                data:
+                  $ref: "#/components/schemas/ContactRequest"
+      "400":
+        description: Validation failed
+      "401":
+        description: Unauthorized
+      "403":
+        description: Admin access required
+      "404":
+        description: Contact request not found
+
+  delete:
+    tags:
+      - Lead Management
+    summary: Delete a contact request (admin)
+    description: Permanently deletes a contact request. This action cannot be undone.
+    security:
+      - bearerAuth: []
+
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+        description: Contact request MongoDB ID
+
+    responses:
+      "200":
+        description: Contact request deleted successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                message:
+                  type: string
+                  example: Contact request deleted successfully
+      "401":
+        description: Unauthorized
+      "403":
+        description: Admin access required
+      "404":
+        description: Contact request not found

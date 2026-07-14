@@ -1,0 +1,254 @@
+tags:
+  - name: Authentication
+    description: User authentication APIs
+
+/auth/register:
+  post:
+    tags:
+      - Authentication
+    summary: Register a new user
+    description: Creates a new user account and returns a JWT token.
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - name
+              - email
+              - phone
+              - password
+            properties:
+              name:
+                type: string
+                minLength: 2
+                maxLength: 50
+                example: Abhiram
+              email:
+                type: string
+                format: email
+                example: abhiram@example.com
+              phone:
+                type: string
+                pattern: "^[6-9]\\d{9}$"
+                description: 10-digit Indian mobile number starting with 6-9
+                example: "9856452345"
+              password:
+                type: string
+                minLength: 8
+                description: Must contain at least one uppercase letter, one lowercase letter, and one number
+                example: Password@123
+
+    responses:
+      "201":
+        description: User registered successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                message:
+                  type: string
+                  example: User registered successfully
+                data:
+                  type: object
+                  properties:
+                    token:
+                      type: string
+                      description: JWT token
+                    user:
+                      $ref: "#/components/schemas/User"
+      "400":
+        description: Validation failed
+      "409":
+        description: Email is already registered
+
+/auth/login:
+  post:
+    tags:
+      - Authentication
+    summary: Login user
+    description: Authenticates a user with email and password, returns a JWT token.
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - email
+              - password
+            properties:
+              email:
+                type: string
+                format: email
+                example: abhiram@example.com
+              password:
+                type: string
+                minLength: 1
+                example: Password@123
+
+    responses:
+      "200":
+        description: Login successful
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                message:
+                  type: string
+                  example: Login successful
+                data:
+                  type: object
+                  properties:
+                    token:
+                      type: string
+                      description: JWT token
+                    user:
+                      $ref: "#/components/schemas/User"
+      "400":
+        description: Validation failed
+      "401":
+        description: Invalid email or password
+
+/auth/me:
+  get:
+    tags:
+      - Authentication
+    summary: Get current user profile
+    description: Returns the authenticated user's profile information.
+    security:
+      - bearerAuth: []
+
+    responses:
+      "200":
+        description: User profile fetched successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                message:
+                  type: string
+                  example: User profile fetched successfully
+                data:
+                  type: object
+                  properties:
+                    user:
+                      $ref: "#/components/schemas/User"
+      "401":
+        description: Unauthorized — missing or invalid token
+
+/auth/admin:
+  get:
+    tags:
+      - Authentication
+    summary: Admin welcome endpoint
+    description: Returns a welcome message. Requires admin role.
+    security:
+      - bearerAuth: []
+
+    responses:
+      "200":
+        description: Admin access confirmed
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                message:
+                  type: string
+                  example: Welcome Admin!
+      "401":
+        description: Unauthorized — missing or invalid token
+      "403":
+        description: Forbidden — admin role required
+
+/auth/change-password:
+  patch:
+    tags:
+      - Authentication
+    summary: Change password
+    description: Changes the authenticated user's password. Requires the current password for verification.
+    security:
+      - bearerAuth: []
+
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - currentPassword
+              - newPassword
+            properties:
+              currentPassword:
+                type: string
+                minLength: 1
+                description: The user's current password
+                example: Password@123
+              newPassword:
+                type: string
+                minLength: 8
+                description: New password — must contain uppercase, lowercase, and a number
+                example: NewPass@456
+
+    responses:
+      "200":
+        description: Password changed successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                message:
+                  type: string
+                  example: Password changed successfully
+      "400":
+        description: Validation failed
+      "401":
+        description: Current password is incorrect or unauthorized
+
+/auth/logout:
+  post:
+    tags:
+      - Authentication
+    summary: Logout user
+    description: Invalidates the current JWT token by adding it to a Redis blacklist. The token will be rejected for all subsequent requests until it expires.
+    security:
+      - bearerAuth: []
+
+    responses:
+      "200":
+        description: Logged out successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                message:
+                  type: string
+                  example: Logged out successfully
+      "401":
+        description: Unauthorized — missing or invalid token

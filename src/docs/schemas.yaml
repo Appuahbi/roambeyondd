@@ -1,0 +1,280 @@
+components:
+  schemas:
+    User:
+      type: object
+      properties:
+        _id:
+          type: string
+          example: 6864c31ad45b0d1234567890
+        name:
+          type: string
+          example: Abhiram
+        email:
+          type: string
+          example: abhiram@example.com
+        phone:
+          type: string
+          example: "9876543210"
+        role:
+          type: string
+          enum:
+            - user
+            - admin
+          example: user
+        isVerified:
+          type: boolean
+          example: false
+        avatar:
+          type: string
+          example: ""
+
+    TourPackage:
+      type: object
+      properties:
+        _id:
+          type: string
+          example: 6864c31ad45b0d1234567890
+        title:
+          type: string
+          example: Delhi Heritage Walk
+        slug:
+          type: string
+          example: delhi-heritage-walk
+        shortDescription:
+          type: string
+          example: Explore the rich heritage of Old Delhi
+        description:
+          type: string
+          example: A comprehensive tour covering Red Fort, Jama Masjid, Chandni Chowk and more
+        destination:
+          type: string
+          example: Delhi
+        category:
+          type: string
+          enum:
+            - Domestic Tours
+            - Trekking Expeditions
+            - Group Tours
+            - Honeymoon Packages
+            - Corporate Tours
+          example: Domestic Tours
+        duration:
+          type: string
+          example: 2 Days
+        price:
+          type: number
+          example: 2999
+        discountPrice:
+          type: number
+          example: 2499
+        currency:
+          type: string
+          example: INR
+        featured:
+          type: boolean
+          example: false
+        isActive:
+          type: boolean
+          example: true
+        maxGroupSize:
+          type: integer
+          example: 20
+        rating:
+          type: number
+          example: 4.5
+        reviewsCount:
+          type: integer
+          example: 12
+        highlights:
+          type: array
+          items:
+            type: string
+          example:
+            - Visit Red Fort
+            - Street food tour in Chandni Chowk
+        included:
+          type: array
+          items:
+            type: string
+          example:
+            - Hotel accommodation
+            - Breakfast and lunch
+        excluded:
+          type: array
+          items:
+            type: string
+          example:
+            - Travel insurance
+            - Personal expenses
+        itinerary:
+          type: array
+          items:
+            type: object
+            properties:
+              day:
+                type: integer
+                example: 1
+              title:
+                type: string
+                example: Old Delhi Exploration
+              description:
+                type: string
+                example: Visit Red Fort, Jama Masjid and Chandni Chowk
+        images:
+          type: array
+          items:
+            type: object
+            properties:
+              url:
+                type: string
+                example: https://res.cloudinary.com/example/image.jpg
+              publicId:
+                type: string
+                example: delhi-tour/image1
+        faq:
+          type: array
+          items:
+            type: object
+            properties:
+              question:
+                type: string
+                example: What is included in the tour?
+              answer:
+                type: string
+                example: Breakfast, lunch and hotel accommodation
+        createdBy:
+          type: string
+          example: 6864c31ad45b0d1234567890
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    Enquiry:
+      type: object
+      properties:
+        _id:
+          type: string
+          example: 6864c31ad45b0d1234567890
+        enquiryNumber:
+          type: string
+          example: ENQ-2026-123456
+        user:
+          $ref: "#/components/schemas/User"
+        customerName:
+          type: string
+          example: Rahul Sharma
+        customerEmail:
+          type: string
+          example: rahul@example.com
+        customerPhone:
+          type: string
+          example: "9876543210"
+        tourPackage:
+          $ref: "#/components/schemas/TourPackage"
+        travelDate:
+          type: string
+          format: date
+          example: "2026-08-15"
+        adults:
+          type: integer
+          example: 2
+        children:
+          type: integer
+          example: 1
+        notes:
+          type: string
+          example: Need pickup from airport
+        leadStatus:
+          type: string
+          enum:
+            - New
+            - Contacted
+            - Quotation Sent
+            - Negotiating
+            - Booked
+            - Closed
+          example: New
+        leadSource:
+          type: string
+          enum:
+            - Website
+            - Instagram
+            - Facebook
+            - WhatsApp
+            - Referral
+            - Walk-in
+            - Phone
+          example: Website
+        priority:
+          type: string
+          enum:
+            - Low
+            - Medium
+            - High
+          example: Medium
+        followUpDate:
+          type: string
+          format: date
+          nullable: true
+        lastContactedAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    ContactRequest:
+      type: object
+      properties:
+        _id:
+          type: string
+          example: 6864c31ad45b0d1234567890
+        name:
+          type: string
+          example: Rahul Sharma
+        email:
+          type: string
+          example: rahul@example.com
+        phone:
+          type: string
+          example: "9876543210"
+        subject:
+          type: string
+          example: Corporate Tour Inquiry
+        message:
+          type: string
+          example: We are planning a corporate trip for 40 employees
+        status:
+          type: string
+          enum:
+            - New
+            - Contacted
+            - Resolved
+            - Closed
+          example: New
+        source:
+          type: string
+          enum:
+            - Website
+            - WhatsApp
+            - Phone
+            - Email
+            - Instagram
+            - Facebook
+          example: Website
+        remarks:
+          type: string
+          example: Customer requested a callback
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time

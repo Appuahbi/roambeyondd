@@ -86,10 +86,72 @@ const logout = asyncHandler(async (req, res) => {
 
 });
 
+const forgotPassword = asyncHandler(async (req, res) => {
+
+    const result = await authService.forgotPasswordUser(
+        req.validatedData.body.email
+    );
+
+    return successResponse(
+        res,
+        null,
+        result.message,
+        200
+    );
+
+});
+
+const resetPassword = asyncHandler(async (req, res) => {
+
+    const { token, newPassword } = req.validatedData.body;
+
+    const result = await authService.resetPasswordUser(token, newPassword);
+
+    return successResponse(
+        res,
+        null,
+        result.message,
+        200
+    );
+
+});
+
+const verifyEmail = asyncHandler(async (req, res) => {
+
+    const { token } = req.validatedData.query;
+
+    const result = await authService.verifyEmailUser(token);
+
+    return successResponse(
+        res,
+        null,
+        result.message,
+        200
+    );
+
+});
+
+const resendVerification = asyncHandler(async (req, res) => {
+
+    const result = await authService.resendVerificationUser(req.user._id);
+
+    return successResponse(
+        res,
+        null,
+        result.message,
+        200
+    );
+
+});
+
 module.exports = {
     register,
     login,
     getMe,
     changePassword,
-    logout
+    logout,
+    forgotPassword,
+    resetPassword,
+    verifyEmail,
+    resendVerification
 };

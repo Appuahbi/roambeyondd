@@ -19,6 +19,22 @@ const clearPackageCache = async () => {
     }
 };
 
+const clearBlogCache = async () => {
+    try {
+        const keys = [];
+        for await (const key of redisClient.scanIterator({ MATCH: "blog*", COUNT: 100 })) {
+            keys.push(key);
+        }
+
+        if (keys.length > 0) {
+            await redisClient.del(keys);
+        }
+    } catch (err) {
+        logger.warn({ err }, "Redis blog cache clear failed");
+    }
+};
+
 module.exports = {
-    clearPackageCache
+    clearPackageCache,
+    clearBlogCache,
 };

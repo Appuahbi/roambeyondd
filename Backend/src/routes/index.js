@@ -16,6 +16,8 @@ const dashboardRoutes = require("./dashboardRoutes");
 
 const contactRequestRoutes = require("./contactRequestRoutes");
 
+const blogRoutes = require("./blogRoutes");
+
 router.get("/", homeController.home);
 
 router.use("/auth", authRoutes);
@@ -29,5 +31,7 @@ router.use("/admin", adminRoutes);
 router.use("/admin/dashboard", dashboardRoutes);
 
 router.use("/contact", contactRequestRoutes);
+
+router.use("/blogs", blogRoutes);
 
 module.exports = router;

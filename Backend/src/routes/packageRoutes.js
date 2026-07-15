@@ -9,14 +9,12 @@ const authorize = require("../middlewares/authorize");
 
 const {
     createPackageSchema,
-    getPackagesSchema,
     getPackageBySlugSchema,
     updatePackageSchema
 } = require("../validations/packageValidation");
 
 router.get(
     "/",
-    validate(getPackagesSchema),
     packageController.getPackages
 );
 

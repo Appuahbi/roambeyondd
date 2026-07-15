@@ -1,8 +1,20 @@
 const { errorResponse } = require("../utils/apiResponse");
+const multer = require("multer");
 
 const errorHandler = (err, req, res, next) => {
 
     err.statusCode = err.statusCode || 500;
+
+    if (err instanceof multer.MulterError) {
+        if (err.code === "LIMIT_FILE_SIZE") {
+            return errorResponse(res, "File size cannot exceed 5MB", 400);
+        }
+        return errorResponse(res, err.message, 400);
+    }
+
+    if (err.message === "Only image files are allowed") {
+        return errorResponse(res, err.message, 400);
+    }
 
     // Duplicate key error (e.g. duplicate email)
     if (err.code === 11000) {

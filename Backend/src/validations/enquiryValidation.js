@@ -68,9 +68,15 @@ const updateEnquiryAdminSchema = z.object({
             "High"
         ]).optional(),
 
-        followUpDate: z.string().optional().nullable(),
+        followUpDate: z.string().optional().nullable()
+            .refine(val => val === null || val === undefined || !isNaN(Date.parse(val)), {
+                message: "Please enter a valid date"
+            }),
 
-        lastContactedAt: z.string().optional().nullable(),
+        lastContactedAt: z.string().optional().nullable()
+            .refine(val => val === null || val === undefined || !isNaN(Date.parse(val)), {
+                message: "Please enter a valid date"
+            }),
 
         remarks: z.string().max(1000).optional()
 

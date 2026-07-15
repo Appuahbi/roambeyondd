@@ -3,7 +3,7 @@ components:
     User:
       type: object
       properties:
-        _id:
+        id:
           type: string
           example: 6864c31ad45b0d1234567890
         name:
@@ -272,6 +272,88 @@ components:
         remarks:
           type: string
           example: Customer requested a callback
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    Blog:
+      type: object
+      properties:
+        id:
+          type: string
+          example: 6864c31ad45b0d1234567890
+        title:
+          type: string
+          example: Top 10 Places to Visit in Delhi
+        slug:
+          type: string
+          example: top-10-places-to-visit-in-delhi
+        content:
+          type: string
+          example: "<p>Delhi is a city rich in history...</p>"
+        excerpt:
+          type: string
+          example: Discover the best attractions in Delhi
+        featuredImage:
+          type: object
+          properties:
+            url:
+              type: string
+              example: https://res.cloudinary.com/example/image.jpg
+            publicId:
+              type: string
+              example: delhi-tour/blogs/image1
+        category:
+          type: string
+          enum:
+            - Travel Tips
+            - Destination Guides
+            - Delhi Culture
+            - Food & Cuisine
+            - Adventure
+            - News & Updates
+        tags:
+          type: array
+          items:
+            type: string
+          example:
+            - delhi
+            - travel
+            - tourism
+        author:
+          $ref: "#/components/schemas/User"
+        status:
+          type: string
+          enum:
+            - draft
+            - published
+          example: published
+        publishedAt:
+          type: string
+          format: date-time
+          nullable: true
+        seo:
+          type: object
+          properties:
+            metaTitle:
+              type: string
+              example: Top 10 Places to Visit in Delhi
+            metaDescription:
+              type: string
+              example: Discover the best attractions in Delhi
+            keywords:
+              type: array
+              items:
+                type: string
+              example:
+                - delhi tourism
+                - places to visit
+        views:
+          type: integer
+          example: 120
         createdAt:
           type: string
           format: date-time

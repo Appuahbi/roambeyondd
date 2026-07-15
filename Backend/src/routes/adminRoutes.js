@@ -5,7 +5,6 @@ const router = express.Router();
 const protect = require("../middlewares/protect");
 const authorize = require("../middlewares/authorize");
 const validate = require("../middlewares/validate");
-const asyncHandler = require("../middlewares/asyncHandler");
 
 const enquiryController = require("../controllers/enquiryController");
 
@@ -15,7 +14,7 @@ router.get(
     "/enquiries",
     protect,
     authorize("admin"),
-    asyncHandler(enquiryController.getAllEnquiries)
+    enquiryController.getAllEnquiries
 );
 
 router.patch(
@@ -23,7 +22,7 @@ router.patch(
     protect,
     authorize("admin"),
     validate(updateEnquiryAdminSchema),
-    asyncHandler(enquiryController.updateEnquiry)
+    enquiryController.updateEnquiry
 );
 
 module.exports = router;

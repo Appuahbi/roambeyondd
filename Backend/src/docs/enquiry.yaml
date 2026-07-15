@@ -184,19 +184,22 @@ tags:
                 message:
                   type: string
                   example: All enquiries fetched successfully
-                total:
-                  type: integer
-                  example: 45
-                page:
-                  type: integer
-                  example: 1
-                totalPages:
-                  type: integer
-                  example: 5
-                enquiries:
-                  type: array
-                  items:
-                    $ref: "#/components/schemas/Enquiry"
+                data:
+                  type: object
+                  properties:
+                    total:
+                      type: integer
+                      example: 45
+                    page:
+                      type: integer
+                      example: 1
+                    totalPages:
+                      type: integer
+                      example: 5
+                    enquiries:
+                      type: array
+                      items:
+                        $ref: "#/components/schemas/Enquiry"
       "401":
         description: Unauthorized
       "403":

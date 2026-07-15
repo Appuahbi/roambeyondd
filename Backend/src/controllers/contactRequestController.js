@@ -52,7 +52,7 @@ const updateContactRequest = asyncHandler(async (req, res) => {
 
     const contactRequest =
         await contactRequestService.updateContactRequest(
-            req.params.id,
+            req.validatedData.params.id,
             req.validatedData.body
         );
 

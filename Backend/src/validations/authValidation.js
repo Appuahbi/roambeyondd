@@ -58,11 +58,47 @@ const changePasswordSchema = z.object({
   }),
 });
 
-const logoutSchema = z.object({});
+const forgotPasswordSchema = z.object({
+  body: z.object({
+    email: z
+      .string()
+      .trim()
+      .toLowerCase()
+      .email("Please enter a valid email"),
+  }),
+});
+
+const resetPasswordSchema = z.object({
+  body: z.object({
+    token: z
+      .string()
+      .min(1, "Reset token is required")
+      .regex(/^[a-f0-9]{64}$/, "Invalid reset token format"),
+
+    newPassword: z
+      .string()
+      .min(8, "Password must be at least 8 characters")
+      .regex(
+        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/,
+        "Password must contain uppercase, lowercase and a number"
+      ),
+  }),
+});
+
+const verifyEmailSchema = z.object({
+  query: z.object({
+    token: z
+      .string()
+      .min(1, "Verification token is required")
+      .regex(/^[a-f0-9]{64}$/, "Invalid verification token format"),
+  }),
+});
 
 module.exports = {
   registerSchema,
   loginSchema,
   changePasswordSchema,
-  logoutSchema,
+  forgotPasswordSchema,
+  resetPasswordSchema,
+  verifyEmailSchema,
 };

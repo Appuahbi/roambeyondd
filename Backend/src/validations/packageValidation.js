@@ -68,12 +68,6 @@ const createPackageSchema = z.object({
 
 
 
-const getPackagesSchema = z.object({
-    query: z.object({})
-});
-
-
-
 const getPackageBySlugSchema = z.object({
     params: z.object({
         slug: z.string().trim().min(1)
@@ -164,7 +158,6 @@ const updatePackageSchema = z.object({
 
 module.exports = {
     createPackageSchema,
-    getPackagesSchema,
     getPackageBySlugSchema,
     updatePackageSchema
 };

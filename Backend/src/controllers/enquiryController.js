@@ -64,7 +64,7 @@ const getAllEnquiries = asyncHandler(async (req, res) => {
 const updateEnquiry = asyncHandler(async (req, res) => {
 
     const enquiry = await enquiryService.updateEnquiry(
-        req.params.id,
+        req.validatedData.params.id,
         req.validatedData.body
     );
 

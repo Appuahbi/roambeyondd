@@ -1,13 +1,7 @@
-const notFound = (req, res, next) => {
+const { errorResponse } = require("../utils/apiResponse");
 
-    res.status(404).json({
-
-        success:false,
-
-        message:`Route ${req.originalUrl} not found`
-
-    });
-
+const notFound = (req, res, _next) => {
+    errorResponse(res, `Route ${req.originalUrl} not found`, 404);
 };
 
 module.exports = notFound;

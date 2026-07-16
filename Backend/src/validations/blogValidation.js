@@ -138,6 +138,7 @@ const getBlogsSchema = z.object({
             ])
             .optional(),
         tag: z.string().trim().optional(),
+        status: z.enum(["draft", "published"]).optional().default("published"),
         sortBy: z
             .enum(["createdAt", "publishedAt", "views", "title"])
             .optional()

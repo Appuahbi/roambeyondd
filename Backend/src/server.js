@@ -28,7 +28,7 @@ const startServer = async () => {
                 try {
                     const mongoose = require("mongoose");
                     await mongoose.connection.close(false);
-                    redisClient.quit();
+                    await redisClient.quit();
                 } catch (err) {
                     logger.error({ err }, "Error during shutdown");
                 }

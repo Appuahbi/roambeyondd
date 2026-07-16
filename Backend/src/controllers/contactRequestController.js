@@ -37,7 +37,7 @@ const getContactRequestById = asyncHandler(async (req, res) => {
 
     const contactRequest =
         await contactRequestService.getContactRequestById(
-            req.params.id
+            req.validatedData.params.id
         );
 
     return successResponse(
@@ -67,7 +67,7 @@ const updateContactRequest = asyncHandler(async (req, res) => {
 const deleteContactRequest = asyncHandler(async (req, res) => {
 
     await contactRequestService.deleteContactRequest(
-        req.params.id
+        req.validatedData.params.id
     );
 
     return successResponse(

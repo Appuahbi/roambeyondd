@@ -32,7 +32,7 @@ const createContactRequestSchema = z.object({
 
 const updateContactRequestSchema = z.object({
     params: z.object({
-        id: z.string()
+        id: z.string().regex(/^[0-9a-fA-F]{24}$/, "Invalid contact request ID")
     }),
 
     body: z.object({
@@ -71,7 +71,21 @@ const updateContactRequestSchema = z.object({
     )
 });
 
+const deleteContactRequestSchema = z.object({
+    params: z.object({
+        id: z.string().regex(/^[0-9a-fA-F]{24}$/, "Invalid contact request ID")
+    })
+});
+
+const getContactRequestByIdSchema = z.object({
+    params: z.object({
+        id: z.string().regex(/^[0-9a-fA-F]{24}$/, "Invalid contact request ID")
+    })
+});
+
 module.exports = {
     createContactRequestSchema,
-    updateContactRequestSchema
+    updateContactRequestSchema,
+    deleteContactRequestSchema,
+    getContactRequestByIdSchema
 };

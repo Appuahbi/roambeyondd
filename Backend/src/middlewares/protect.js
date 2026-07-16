@@ -2,6 +2,7 @@ const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 const AppError = require("../utils/AppError");
 const { redisClient } = require("../config/redis");
+const logger = require("../config/logger");
 
 const protect = async (req, res, next) => {
 
@@ -30,7 +31,7 @@ const protect = async (req, res, next) => {
         try {
             isBlacklisted = await redisClient.get(`blacklist:${token}`);
         } catch (redisError) {
-            // Redis unavailable — skip blacklist check
+            logger.warn({ err: redisError }, "Redis unavailable — skip blacklist check");
         }
         if (isBlacklisted) {
             throw new AppError(
@@ -87,6 +88,19 @@ const protect = async (req, res, next) => {
                 await redisClient.set(cacheKey, JSON.stringify(user.toObject()), { EX: 300 });
             } catch (redisError) {
                 // Redis unavailable — skip caching
+            }
+        }
+
+        // Reject tokens issued before the last password change
+        if (user.passwordChangedAt && decoded.iat) {
+            const changedTimestamp = Math.floor(
+                user.passwordChangedAt.getTime() / 1000
+            );
+            if (decoded.iat < changedTimestamp) {
+                throw new AppError(
+                    "Password was recently changed. Please log in again.",
+                    401
+                );
             }
         }
 

@@ -18,6 +18,7 @@ const router = express.Router();
 
 router.get(
     "/",
+    optionalAuth,
     validate(getBlogsSchema),
     blogController.getBlogs
 );

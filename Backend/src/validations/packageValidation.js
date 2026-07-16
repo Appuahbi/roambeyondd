@@ -62,7 +62,9 @@ const createPackageSchema = z.object({
         faq: z.array(z.object({
             question: z.string().trim().min(1),
             answer: z.string().trim().min(1)
-        })).optional()
+        })).optional(),
+
+        maxGroupSize: z.number().int().min(1).optional()
     })
 });
 
@@ -80,7 +82,7 @@ const updatePackageSchema = z.object({
 
     params: z.object({
 
-        id: z.string()
+        id: z.string().regex(/^[0-9a-fA-F]{24}$/, "Invalid package ID")
 
     }),
 
@@ -93,11 +95,13 @@ const updatePackageSchema = z.object({
             .optional(),
 
         shortDescription: z.string()
+            .trim()
             .min(20)
             .max(200)
             .optional(),
 
         description: z.string()
+            .trim()
             .min(50)
             .optional(),
 
@@ -113,6 +117,8 @@ const updatePackageSchema = z.object({
         ]).optional(),
 
         duration: z.string()
+            .trim()
+            .min(3)
             .optional(),
 
         price: z.number()
@@ -149,15 +155,27 @@ const updatePackageSchema = z.object({
         faq: z.array(z.object({
             question: z.string().trim().min(1),
             answer: z.string().trim().min(1)
-        })).optional()
+        })).optional(),
+
+        maxGroupSize: z.number().int().min(1).optional()
 
     })
 
-});
+}).refine(
+    (obj) => Object.keys(obj.body).length > 0,
+    { message: "At least one field must be provided for update" }
+);
 
+
+const deletePackageSchema = z.object({
+    params: z.object({
+        id: z.string().regex(/^[0-9a-fA-F]{24}$/, "Invalid package ID")
+    })
+});
 
 module.exports = {
     createPackageSchema,
     getPackageBySlugSchema,
-    updatePackageSchema
+    updatePackageSchema,
+    deletePackageSchema
 };

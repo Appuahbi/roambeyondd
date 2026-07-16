@@ -13,7 +13,6 @@ const blogSchema = new mongoose.Schema(
         slug: {
             type: String,
             unique: true,
-            index: true,
         },
         content: {
             type: String,
@@ -96,7 +95,7 @@ const blogSchema = new mongoose.Schema(
     }
 );
 
-blogSchema.pre("validate", function (next) {
+blogSchema.pre("validate", function () {
     if (this.isModified("title")) {
         this.slug = slugify(this.title, {
             lower: true,
@@ -104,10 +103,8 @@ blogSchema.pre("validate", function (next) {
             trim: true,
         });
     }
-    next();
 });
 
-blogSchema.index({ slug: 1 });
 blogSchema.index({ status: 1, publishedAt: -1 });
 blogSchema.index({ category: 1 });
 blogSchema.index({ tags: 1 });

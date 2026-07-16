@@ -4,7 +4,7 @@ const { successResponse } = require("../utils/apiResponse");
 
 const createBlog = asyncHandler(async (req, res) => {
     const blog = await blogService.createBlog(
-        req.validatedData.body,
+        { ...req.validatedData.body, author: req.user._id },
         req.file
     );
 
@@ -12,7 +12,14 @@ const createBlog = asyncHandler(async (req, res) => {
 });
 
 const getBlogs = asyncHandler(async (req, res) => {
-    const result = await blogService.getBlogs(req.validatedData.query);
+    const filters = { ...req.validatedData.query };
+    const isAdmin = req.user && req.user.role === "admin";
+
+    if (!isAdmin) {
+        filters.status = "published";
+    }
+
+    const result = await blogService.getBlogs(filters);
 
     return successResponse(res, result, "Blogs retrieved successfully");
 });

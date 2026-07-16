@@ -21,15 +21,15 @@ const registerUser = async (userData) => {
 
     // Create user
     const user = await User.create({
-    name: userData.name,
-    email: userData.email,
-    phone: userData.phone,
-    password: userData.password,
-    role: "user"
-});
+        name: userData.name,
+        email: userData.email,
+        phone: userData.phone,
+        password: userData.password,
+        role: "user"
+    });
 
     // Generate JWT
-   const token = user.generateAuthToken();
+    const token = user.generateAuthToken();
 
     // Send verification email
     const rawVerifyToken = crypto.randomBytes(32).toString("hex");
@@ -119,6 +119,7 @@ const changePasswordUser = async (userId, currentPassword, newPassword) => {
     }
 
     user.password = newPassword;
+    user.passwordChangedAt = new Date();
     await user.save();
 
     // Invalidate cached user so next request re-fetches from DB
@@ -205,6 +206,7 @@ const resetPasswordUser = async (token, newPassword) => {
     }
 
     user.password = newPassword;
+    user.passwordChangedAt = new Date();
     await user.save();
 
     try {
@@ -272,6 +274,7 @@ const resendVerificationUser = async (userId) => {
     }
 
     // Invalidate any existing verification tokens for this user
+    // TODO: Consider per-user Redis Set (verify:user:{userId}) for large scale
     try {
         for await (const key of redisClient.scanIterator({ MATCH: "verify:*", COUNT: 100 })) {
             const storedUserId = await redisClient.get(key);

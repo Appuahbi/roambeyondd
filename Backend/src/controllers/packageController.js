@@ -63,7 +63,7 @@ const updatePackage = asyncHandler(async (req, res) => {
 const deletePackage = asyncHandler(async (req, res) => {
 
     await packageService.deletePackage(
-        req.params.id
+        req.validatedData.params.id
     );
 
     return successResponse(

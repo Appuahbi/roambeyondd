@@ -5,9 +5,6 @@ const { redisClient } = require("../config/redis");
 const { clearPackageCache } = require("../utils/cache");
 const logger = require("../config/logger");
 
-
-
-
 /*
 |--------------------------------------------------------------------------
 | Create Package
@@ -31,9 +28,9 @@ const createPackage = async (packageData, userId) => {
         createdBy: userId
     });
 
-await clearPackageCache();
+    await clearPackageCache();
 
-return tourPackage;
+    return tourPackage;
 };
 
 /*
@@ -43,7 +40,6 @@ return tourPackage;
 */
 
 const getPackages = async () => {
-
     const cacheKey = "tour-packages:all";
 
     try {
@@ -65,7 +61,6 @@ const getPackages = async () => {
     }
 
     return packages;
-
 };
 
 /*
@@ -75,7 +70,6 @@ const getPackages = async () => {
 */
 
 const getPackageBySlug = async (slug) => {
-
     const cacheKey = `tour-package:${slug}`;
 
     try {
@@ -103,15 +97,9 @@ const getPackageBySlug = async (slug) => {
     }
 
     const relatedPackages = await TourPackage.find({
-
         category: tourPackage.category,
-
-        _id: {
-            $ne: tourPackage._id
-        },
-
+        _id: { $ne: tourPackage._id },
         isActive: true
-
     })
         .limit(4)
         .select(
@@ -119,21 +107,17 @@ const getPackageBySlug = async (slug) => {
         );
 
     const result = {
+        package: tourPackage,
+        relatedPackages
+    };
 
-    package: tourPackage,
+    try {
+        await redisClient.set(cacheKey, JSON.stringify(result), { EX: 300 });
+    } catch (err) {
+        logger.warn({ err }, "Redis write failed");
+    }
 
-    relatedPackages
-
-};
-
-try {
-    await redisClient.set(cacheKey, JSON.stringify(result), { EX: 300 });
-} catch (err) {
-    logger.warn({ err }, "Redis write failed");
-}
-
-return result;
-
+    return result;
 };
 
 /*
@@ -143,71 +127,47 @@ return result;
 */
 
 const updatePackage = async (id, updateData) => {
-
     const allowedUpdates = [
-
         "title",
-
         "shortDescription",
-
         "description",
-
         "destination",
-
         "category",
-
         "duration",
-
         "price",
-
         "discountPrice",
-
         "featured",
-
         "isActive",
-
         "highlights",
-
         "included",
-
         "excluded",
-
         "itinerary",
-
         "images",
-
-        "faq"
-
+        "faq",
+        "maxGroupSize"
     ];
 
-    const updates = pick(
-        updateData,
-        allowedUpdates
+    const updates = pick(updateData, allowedUpdates);
+
+    const updatedPackage = await TourPackage.findByIdAndUpdate(
+        id,
+        updates,
+        {
+            returnDocument: "after",
+            runValidators: true
+        }
     );
 
-    const updatedPackage =
-        await TourPackage.findByIdAndUpdate(
-            id,
-            updates,
-            {
-                new: true,
-                runValidators: true
-            }
-        );
-
     if (!updatedPackage) {
-
         throw new AppError(
             "Tour package not found",
             404
         );
-
     }
 
     await clearPackageCache();
 
-return updatedPackage;
-
+    return updatedPackage;
 };
 
 /*
@@ -217,43 +177,28 @@ return updatedPackage;
 */
 
 const deletePackage = async (id) => {
-
-    const deletedPackage =
-        await TourPackage.findByIdAndUpdate(
-            id,
-            {
-                isActive: false
-            },
-            {
-                new: true
-            }
-        );
+    const deletedPackage = await TourPackage.findByIdAndUpdate(
+        id,
+        { isActive: false },
+        { returnDocument: "after" }
+    );
 
     if (!deletedPackage) {
-
         throw new AppError(
             "Tour package not found",
             404
         );
-
     }
 
-   await clearPackageCache();
+    await clearPackageCache();
 
-return deletedPackage;
-
+    return deletedPackage;
 };
 
 module.exports = {
-
     createPackage,
-
     getPackages,
-
     getPackageBySlug,
-
     updatePackage,
-
     deletePackage
-
 };

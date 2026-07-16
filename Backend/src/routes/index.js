@@ -26,9 +26,9 @@ router.use("/packages", packageRoutes);
 
 router.use("/enquiries", enquiryRoutes);
 
-router.use("/admin", adminRoutes);
-
 router.use("/admin/dashboard", dashboardRoutes);
+
+router.use("/admin", adminRoutes);
 
 router.use("/contact", contactRequestRoutes);
 

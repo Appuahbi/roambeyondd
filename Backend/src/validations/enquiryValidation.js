@@ -6,7 +6,7 @@ const createEnquirySchema = z.object({
 
         tourPackage: z
             .string()
-            .min(1, "Tour package is required"),
+            .regex(/^[0-9a-fA-F]{24}$/, "Invalid tour package ID"),
 
         travelDate: z
             .string()
@@ -39,7 +39,7 @@ const createEnquirySchema = z.object({
 
 const updateEnquiryAdminSchema = z.object({
     params: z.object({
-        id: z.string()
+        id: z.string().regex(/^[0-9a-fA-F]{24}$/, "Invalid enquiry ID")
     }),
 
     body: z.object({
@@ -86,7 +86,14 @@ const updateEnquiryAdminSchema = z.object({
     )
 });
 
+const getEnquiryByIdSchema = z.object({
+    params: z.object({
+        id: z.string().regex(/^[0-9a-fA-F]{24}$/, "Invalid enquiry ID")
+    })
+});
+
 module.exports = {
     createEnquirySchema,
-    updateEnquiryAdminSchema
+    updateEnquiryAdminSchema,
+    getEnquiryByIdSchema
 };

@@ -12,7 +12,11 @@ const errorHandler = (err, req, res, next) => {
         return errorResponse(res, err.message, 400);
     }
 
-    if (err.message === "Only image files are allowed") {
+    if (err.type === "entity.parse.failed") {
+        return errorResponse(res, "Invalid JSON in request body", 400);
+    }
+
+    if (err.code === "INVALID_FILE_TYPE") {
         return errorResponse(res, err.message, 400);
     }
 
@@ -58,7 +62,7 @@ const errorHandler = (err, req, res, next) => {
         res,
         err.isOperational ? err.message : "Internal server error",
         err.statusCode,
-        process.env.NODE_ENV === "development" ? [{ stack: err.stack }] : null
+        process.env.NODE_ENV !== "production" ? [{ stack: err.stack }] : null
     );
 
 };

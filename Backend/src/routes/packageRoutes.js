@@ -10,7 +10,8 @@ const authorize = require("../middlewares/authorize");
 const {
     createPackageSchema,
     getPackageBySlugSchema,
-    updatePackageSchema
+    updatePackageSchema,
+    deletePackageSchema
 } = require("../validations/packageValidation");
 
 router.get(
@@ -44,6 +45,7 @@ router.delete(
     "/:id",
     protect,
     authorize("admin"),
+    validate(deletePackageSchema),
     packageController.deletePackage
 );
 

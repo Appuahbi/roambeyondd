@@ -7,7 +7,8 @@ const protect = require("../middlewares/protect");
 const validate = require("../middlewares/validate");
 
 const {
-    createEnquirySchema
+    createEnquirySchema,
+    getEnquiryByIdSchema
 } = require("../validations/enquiryValidation");
 
 const router = express.Router();
@@ -46,6 +47,7 @@ GET /api/enquiries/:id
 router.get(
     "/:id",
     protect,
+    validate(getEnquiryByIdSchema),
     enquiryController.getEnquiryById
 );
 

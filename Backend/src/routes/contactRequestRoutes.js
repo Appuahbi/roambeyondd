@@ -14,7 +14,11 @@ const {
 
     createContactRequestSchema,
 
-    updateContactRequestSchema
+    updateContactRequestSchema,
+
+    deleteContactRequestSchema,
+
+    getContactRequestByIdSchema
 
 } = require("../validations/contactRequestValidation");
 
@@ -60,6 +64,8 @@ router.get(
 
     authorize("admin"),
 
+    validate(getContactRequestByIdSchema),
+
     contactRequestController.getContactRequestById
 
 );
@@ -85,6 +91,8 @@ router.delete(
     protect,
 
     authorize("admin"),
+
+    validate(deleteContactRequestSchema),
 
     contactRequestController.deleteContactRequest
 

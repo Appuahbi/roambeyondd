@@ -87,9 +87,9 @@ const getBlogBySlug = async (slug, isAdmin = false) => {
         blog = await Blog.findOne({ slug }).populate("author", "name email");
     } else {
         blog = await Blog.findOneAndUpdate(
-            { slug },
+            { slug, status: "published" },
             { $inc: { views: 1 } },
-            { new: true }
+            { returnDocument: "after" }
         ).populate("author", "name email");
     }
 

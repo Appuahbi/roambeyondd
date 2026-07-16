@@ -1,6 +1,7 @@
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 const { redisClient } = require("../config/redis");
+const logger = require("../config/logger");
 
 const optionalAuth = async (req, res, next) => {
     try {
@@ -28,7 +29,7 @@ const optionalAuth = async (req, res, next) => {
         try {
             isBlacklisted = await redisClient.get(`blacklist:${token}`);
         } catch (redisError) {
-            // Redis unavailable — skip blacklist check
+            logger.warn({ err: redisError }, "Redis unavailable — skip blacklist check");
         }
         if (isBlacklisted) {
             return next();
@@ -53,6 +54,14 @@ const optionalAuth = async (req, res, next) => {
         }
 
         if (user) {
+            if (user.passwordChangedAt && decoded.iat) {
+                const changedTimestamp = Math.floor(
+                    user.passwordChangedAt.getTime() / 1000
+                );
+                if (decoded.iat < changedTimestamp) {
+                    return next();
+                }
+            }
             req.user = user;
             req.decoded = decoded;
         }

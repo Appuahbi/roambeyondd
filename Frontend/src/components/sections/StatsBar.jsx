@@ -1,13 +1,18 @@
 import { useRef, useEffect, useState } from 'react'
-import { useInView } from 'framer-motion'
+import { useInView, useReducedMotion } from 'framer-motion'
 import { Users, MapPin, Package, Star, Map } from 'lucide-react'
 
 function AnimatedCounter({ target, suffix = '', duration = 2000 }) {
+  const prefersReduced = useReducedMotion()
   const [count, setCount] = useState(0)
   const ref = useRef(null)
   const isInView = useInView(ref, { once: true })
   useEffect(() => {
     if (!isInView) return
+    if (prefersReduced) {
+      setCount(target)
+      return
+    }
     let startTimestamp = null
     const step = (timestamp) => {
       if (!startTimestamp) startTimestamp = timestamp
@@ -17,7 +22,7 @@ function AnimatedCounter({ target, suffix = '', duration = 2000 }) {
       if (progress < 1) requestAnimationFrame(step)
     }
     requestAnimationFrame(step)
-  }, [isInView, target, duration])
+  }, [isInView, target, duration, prefersReduced])
   return <span ref={ref}>{count.toLocaleString('en-IN')}{suffix}</span>
 }
 

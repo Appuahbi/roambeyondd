@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { motion, AnimatePresence, useScroll, useTransform, useSpring } from 'framer-motion'
+import { motion, AnimatePresence, useScroll, useTransform, useSpring, useReducedMotion } from 'framer-motion'
 import { Search, Calendar, Users, ChevronDown, MapPin, Navigation } from 'lucide-react'
 
 const slides = [
@@ -16,6 +16,7 @@ const quickTags = ['Manali', 'Goa', 'Kerala', 'Rajasthan', 'Ladakh', 'Andaman', 
 export default function Hero() {
   const navigate = useNavigate()
   const heroRef = useRef(null)
+  const prefersReduced = useReducedMotion()
   const [mousePos, setMousePos] = useState({ x: 50, y: 50 })
   const [currentSlide, setCurrentSlide] = useState(0)
   const [destination, setDestination] = useState('')
@@ -65,18 +66,28 @@ export default function Hero() {
     <section ref={heroRef} className="relative overflow-hidden bg-cream py-12 sm:py-16 lg:py-24">
       {/* Animated gradient blobs following mouse with scroll-linked parallax */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <motion.div
-          className="absolute h-[500px] w-[500px] rounded-full bg-primary/[0.04] blur-[100px] animate-blob transition-all duration-[2000ms] ease-out"
-          style={{ left: `${mousePos.x * 0.6}%`, top: `${mousePos.y * 0.6}%`, transform: 'translate(-50%, -50%)', y: blobY1 }}
-        />
-        <motion.div
-          className="absolute h-[400px] w-[400px] rounded-full bg-secondary/[0.05] blur-[80px] animate-blob-alt transition-all duration-[2500ms] ease-out"
-          style={{ right: `${100 - mousePos.x * 0.4}%`, bottom: `${100 - mousePos.y * 0.4}%`, transform: 'translate(50%, 50%)', y: blobY2 }}
-        />
-        <motion.div
-          className="absolute h-[300px] w-[300px] rounded-full bg-gold/[0.03] blur-[60px] animate-blob transition-all duration-[3000ms] ease-out"
-          style={{ left: '40%', top: '30%', transform: 'translate(-50%, -50%)', y: blobY3 }}
-        />
+        {prefersReduced ? (
+          <>
+            <div className="absolute left-1/3 top-1/3 h-[500px] w-[500px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/[0.04] blur-[100px]" />
+            <div className="absolute right-1/4 bottom-1/4 h-[400px] w-[400px] rounded-full bg-secondary/[0.05] blur-[80px]" />
+            <div className="absolute left-[40%] top-[30%] h-[300px] w-[300px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-gold/[0.03] blur-[60px]" />
+          </>
+        ) : (
+          <>
+            <motion.div
+              className="absolute h-[500px] w-[500px] rounded-full bg-primary/[0.04] blur-[100px] animate-blob transition-all duration-[2000ms] ease-out"
+              style={{ left: `${mousePos.x * 0.6}%`, top: `${mousePos.y * 0.6}%`, transform: 'translate(-50%, -50%)', y: blobY1 }}
+            />
+            <motion.div
+              className="absolute h-[400px] w-[400px] rounded-full bg-secondary/[0.05] blur-[80px] animate-blob-alt transition-all duration-[2500ms] ease-out"
+              style={{ right: `${100 - mousePos.x * 0.4}%`, bottom: `${100 - mousePos.y * 0.4}%`, transform: 'translate(50%, 50%)', y: blobY2 }}
+            />
+            <motion.div
+              className="absolute h-[300px] w-[300px] rounded-full bg-gold/[0.03] blur-[60px] animate-blob transition-all duration-[3000ms] ease-out"
+              style={{ left: '40%', top: '30%', transform: 'translate(-50%, -50%)', y: blobY3 }}
+            />
+          </>
+        )}
       </div>
 
       <motion.div style={{ opacity: heroOpacity, scale: heroScale }} className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">

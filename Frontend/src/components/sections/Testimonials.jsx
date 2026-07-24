@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { Star, ChevronLeft, ChevronRight, Quote } from 'lucide-react'
 import AnimatedSection from '../ui/AnimatedSection'
 
@@ -12,12 +12,13 @@ const testimonials = [
 ]
 
 export default function Testimonials() {
+  const prefersReduced = useReducedMotion()
   const [current, setCurrent] = useState(0)
   const [direction, setDirection] = useState(0)
   const [isPaused, setIsPaused] = useState(false)
   const next = useCallback(() => { setDirection(1); setCurrent((p) => (p + 1) % testimonials.length) }, [])
   const prev = useCallback(() => { setDirection(-1); setCurrent((p) => (p - 1 + testimonials.length) % testimonials.length) }, [])
-  useEffect(() => { if (isPaused) return; const t = setInterval(next, 6000); return () => clearInterval(t) }, [next, isPaused])
+  useEffect(() => { if (isPaused || prefersReduced) return; const t = setInterval(next, 6000); return () => clearInterval(t) }, [next, isPaused, prefersReduced])
 
   const variants = {
     enter: (dir) => ({ x: dir > 0 ? 300 : -300, opacity: 0, scale: 0.95 }),
@@ -45,11 +46,11 @@ export default function Testimonials() {
             <div className="relative min-h-[220px]">
               <AnimatePresence custom={direction} mode="wait">
                 <motion.div key={current} custom={direction} variants={variants} initial="enter" animate="center" exit="exit"
-                  transition={{ duration: 0.4, ease: [0.25, 0.1, 0.25, 1] }}
-                  drag="x" dragConstraints={{ left: 0, right: 0 }} dragElastic={0.2}
-                  onDragEnd={(_, info) => { if (info.offset.x < -50) next(); else if (info.offset.x > 50) prev() }}
+                  transition={prefersReduced ? { duration: 0 } : { duration: 0.4, ease: [0.25, 0.1, 0.25, 1] }}
+                  drag={prefersReduced ? false : "x"} dragConstraints={prefersReduced ? undefined : { left: 0, right: 0 }} dragElastic={prefersReduced ? undefined : 0.2}
+                  onDragEnd={prefersReduced ? undefined : (_, info) => { if (info.offset.x < -50) next(); else if (info.offset.x > 50) prev() }}
                   onMouseEnter={() => setIsPaused(true)} onMouseLeave={() => setIsPaused(false)}
-                  className="cursor-grab active:cursor-grabbing">
+                  className={prefersReduced ? undefined : "cursor-grab active:cursor-grabbing"}>
                   <div className="mb-4 flex gap-0.5">
                     {[...Array(5)].map((_, i) => (
                       <Star key={i} className={`h-5 w-5 ${i < t.rating ? 'fill-gold text-gold' : 'fill-border text-border'}`} />

@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion'
+import { motion, useReducedMotion } from 'framer-motion'
 import Hero from '../components/sections/Hero'
 import IndiaMap from '../components/sections/IndiaMap'
 import CategoriesSection from '../components/sections/CategoriesSection'
@@ -10,12 +10,13 @@ import LatestBlogs from '../components/sections/LatestBlogs'
 import CTASection from '../components/sections/CTASection'
 import Newsletter from '../components/sections/Newsletter'
 
-const sectionVariants = {
-  hidden: { opacity: 0 },
-  visible: { opacity: 1, transition: { duration: 0.5 } }
-}
-
 export default function HomePage() {
+  const prefersReduced = useReducedMotion()
+  const sectionVariants = {
+    hidden: { opacity: 0 },
+    visible: { opacity: 1, transition: prefersReduced ? { duration: 0 } : { duration: 0.5 } }
+  }
+
   return (
     <div>
       <Hero />

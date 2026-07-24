@@ -11,7 +11,6 @@ export default function TrendingPackages() {
   const packages = (data?.data || []).slice(0, 8)
   const scrollRef = useRef(null)
   const [wishlist, setWishlist] = useState({})
-  const [isDragging, setIsDragging] = useState(false)
   const toggleWishlist = (id, e) => { e.preventDefault(); e.stopPropagation(); setWishlist((p) => ({ ...p, [id]: !p[id] })) }
   const scroll = (dir) => { scrollRef.current?.scrollBy({ left: dir * 320, behavior: 'smooth' }) }
 
@@ -45,11 +44,9 @@ export default function TrendingPackages() {
         </AnimatedSection>
       </div>
 
-      <motion.div ref={scrollRef} drag="x" dragConstraints={{ left: 0, right: 0 }} dragElastic={0.1}
-        onDragStart={() => setIsDragging(true)}
-        onDragEnd={(_, info) => { setIsDragging(false); scrollRef.current?.scrollBy({ left: -info.offset.x, behavior: 'auto' }) }}
+      <div ref={scrollRef}
         className="flex gap-4 overflow-x-auto px-4 pb-4 scrollbar-none sm:px-6 lg:px-8"
-        style={{ scrollSnapType: 'x mandatory', cursor: isDragging ? 'grabbing' : 'grab' }}>
+        style={{ scrollSnapType: 'x mandatory' }}>
         {packages.map((pkg, i) => {
           const discount = pkg.discountPrice > 0 ? Math.round(((pkg.price - pkg.discountPrice) / pkg.price) * 100) : 0
           return (
@@ -95,7 +92,7 @@ export default function TrendingPackages() {
             </motion.div>
           )
         })}
-      </motion.div>
+      </div>
     </section>
   )
 }

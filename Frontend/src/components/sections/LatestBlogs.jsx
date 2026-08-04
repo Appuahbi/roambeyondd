@@ -1,57 +1,65 @@
-import { Link } from 'react-router-dom'
-import { motion } from 'framer-motion'
-import { ArrowRight } from 'lucide-react'
-import { useGetBlogsQuery } from '../../services/blogsService'
-import BlogCard from './BlogCard'
-import AnimatedSection from '../ui/AnimatedSection'
-import { SkeletonList } from '../ui/Skeleton'
+import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { ArrowRight, Clock } from 'lucide-react';
+import clsx from 'clsx';
+import { blogApi } from '../../api/endpoints';
+import { formatDate } from '../../utils/format';
+import ImageWithFallback from '../ui/ImageWithFallback';
+import { SectionHeader } from './CategoriesSection';
+import { useReveal } from '../../hooks/useReveal';
 
 export default function LatestBlogs() {
-  const { data, isLoading } = useGetBlogsQuery({ limit: 3 })
-  const blogs = data?.data?.blogs || data?.data || []
-
-  if (!blogs.length && !isLoading) return null
+  const [blogs, setBlogs] = useState([]);
+  const [ref, shown] = useReveal();
+  useEffect(() => {
+    blogApi.list({ limit: 3 }).then((r) => setBlogs(r?.data?.blogs || r?.data?.items || r?.data?.data || [])).catch(() => {});
+  }, []);
 
   return (
-    <section className="bg-white py-16 sm:py-20">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6">
-        <AnimatedSection className="mb-10">
-          <div className="flex items-end justify-between">
-            <div>
-              <p className="mb-2 text-sm font-semibold uppercase tracking-wider text-primary">
-                From the Blog
-              </p>
-              <h2 className="font-display text-3xl font-bold text-ink sm:text-4xl">
-                Travel Stories & Tips
-              </h2>
-            </div>
-            <Link
-              to="/blog"
-              className="hidden items-center gap-1 text-sm font-medium text-primary transition-colors hover:text-primary-dark sm:flex"
-            >
-              Read all <ArrowRight className="h-4 w-4" />
-            </Link>
-          </div>
-        </AnimatedSection>
+    <section ref={ref} className="py-16 sm:py-20">
+      <div className="section">
+        <div className="flex items-end justify-between gap-4 flex-wrap">
+          <SectionHeader
+            eyebrow="From the journal"
+            title="Stories, guides and tips"
+            subtitle="Practical advice and field notes from our team on the ground"
+            center={false}
+          />
+          <Link to="/blogs" className="hidden sm:inline-flex items-center gap-1 text-sm font-semibold text-brand-700 hover:text-brand-800">
+            All articles <ArrowRight size={14} />
+          </Link>
+        </div>
 
-        {isLoading ? (
-          <SkeletonList count={3} />
-        ) : (
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {blogs.slice(0, 3).map((blog, i) => (
-              <motion.div
-                key={blog._id || blog.slug}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.1 }}
-              >
-                <BlogCard blog={blog} />
-              </motion.div>
-            ))}
-          </div>
-        )}
+        <div className="mt-10 grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          {blogs.map((b, i) => (
+            <Link
+              key={b._id}
+              to={`/blogs/${b.slug}`}
+              className={clsx('card card-hover overflow-hidden block', shown ? 'animate-fade-up' : 'opacity-0')}
+              style={{ animationDelay: `${i * 80}ms` }}
+            >
+              <div className="relative aspect-[16/10] overflow-hidden">
+                <ImageWithFallback item={b} kind="blog" alt={b.title} className="transition-transform duration-700 hover:scale-110" />
+                <div className="absolute top-3 left-3">
+                  <span className="chip-brand">{b.category}</span>
+                </div>
+              </div>
+              <div className="p-5">
+                <p className="text-xs text-ink-500 inline-flex items-center gap-2">
+                  <Clock size={12} /> {formatDate(b.publishedAt || b.createdAt)}
+                </p>
+                <h3 className="mt-2 font-display text-lg font-semibold text-ink-900 line-clamp-2 hover:text-brand-700">
+                  {b.title}
+                </h3>
+                <p className="mt-2 text-sm text-ink-500 line-clamp-2">{b.excerpt}</p>
+              </div>
+            </Link>
+          ))}
+          {blogs.length === 0 && (
+            <p className="text-sm text-ink-500 col-span-full text-center py-8">Stories coming soon — check back!</p>
+          )}
+        </div>
       </div>
     </section>
-  )
+  );
 }

@@ -1,32 +1,63 @@
-import { CalendarDays } from 'lucide-react'
+import { useState } from 'react';
+import clsx from 'clsx';
+import { CheckCircle2, MapPin } from 'lucide-react';
 
-export default function ItineraryTimeline({ itinerary = [] }) {
-  if (!itinerary.length) return null
-
+export default function ItineraryTimeline({ days = [], included = [] }) {
+  const [active, setActive] = useState(0);
+  if (!days.length) return null;
   return (
-    <div className="space-y-0">
-      {itinerary.map((day, i) => (
-        <div key={i} className="relative flex gap-4">
-          {/* Timeline line */}
-          <div className="flex flex-col items-center">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-white">
-              {day.day || i + 1}
-            </div>
-            {i < itinerary.length - 1 && (
-              <div className="w-0.5 flex-1 bg-border" />
-            )}
-          </div>
-
-          <div className="pb-6 pt-1">
-            <h4 className="mb-1 font-display text-base font-semibold text-ink">
-              {day.title}
-            </h4>
-            <p className="text-sm leading-relaxed text-muted">
-              {day.description}
-            </p>
-          </div>
+    <div className="grid lg:grid-cols-12 gap-6">
+      <ol className="lg:col-span-5 space-y-2">
+        {days.map((d, i) => (
+          <li key={i}>
+            <button
+              onClick={() => setActive(i)}
+              className={clsx(
+                'w-full text-left rounded-2xl p-4 border transition',
+                i === active
+                  ? 'border-brand-300 bg-brand-50 shadow-soft'
+                  : 'border-cream-200 hover:border-brand-200 bg-white'
+              )}
+            >
+              <div className="flex items-start gap-3">
+                <div className={clsx(
+                  'h-9 w-9 grid place-items-center rounded-full text-sm font-bold shrink-0',
+                  i === active ? 'bg-brand-600 text-white' : 'bg-cream-100 text-brand-800'
+                )}>
+                  D{d.day}
+                </div>
+                <div>
+                  <p className="font-semibold text-ink-900 line-clamp-1">{d.title}</p>
+                  <p className="text-xs text-ink-500 line-clamp-2">{d.description}</p>
+                </div>
+              </div>
+            </button>
+          </li>
+        ))}
+      </ol>
+      <div className="lg:col-span-7 card p-6">
+        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-brand-700">
+          <MapPin size={12} /> Day {days[active]?.day}
         </div>
-      ))}
+        <h3 className="mt-2 font-display text-2xl font-semibold text-ink-900">{days[active]?.title}</h3>
+        <p className="mt-3 text-ink-700 leading-relaxed">{days[active]?.description}</p>
+        {included.length > 0 && (
+          <div className="mt-6 grid sm:grid-cols-2 gap-3">
+            {included.map((text) => (
+              <Bullet key={text} text={text} />
+            ))}
+          </div>
+        )}
+      </div>
     </div>
-  )
+  );
+}
+
+function Bullet({ text }) {
+  return (
+    <div className="flex items-center gap-2 text-sm text-ink-700">
+      <CheckCircle2 size={16} className="text-brand-600" />
+      {text}
+    </div>
+  );
 }

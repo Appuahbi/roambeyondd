@@ -76,10 +76,25 @@ const updateEnquiry = asyncHandler(async (req, res) => {
 
 });
 
+const deleteEnquiry = asyncHandler(async (req, res) => {
+
+    await enquiryService.deleteEnquiry(
+        req.params.id
+    );
+
+    return successResponse(
+        res,
+        null,
+        "Enquiry deleted successfully"
+    );
+
+});
+
 module.exports = {
     createEnquiry,
     getMyEnquiries,
     getEnquiryById,
     getAllEnquiries,
-    updateEnquiry
+    updateEnquiry,
+    deleteEnquiry
 };

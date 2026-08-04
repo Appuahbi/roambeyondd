@@ -79,8 +79,9 @@ describe("GET /api/packages", () => {
 
         expect(res.status).toBe(200);
         expect(res.body.success).toBe(true);
-        expect(Array.isArray(res.body.data)).toBe(true);
-        expect(res.body.data.length).toBe(1);
+        expect(Array.isArray(res.body.data.data)).toBe(true);
+        expect(res.body.data.data.length).toBe(1);
+        expect(res.body.data.pagination).toBeDefined();
     });
 });
 
@@ -175,6 +176,6 @@ describe("DELETE /api/packages/:id", () => {
         const res = await request(app).get("/api/packages");
 
         expect(res.status).toBe(200);
-        expect(res.body.data.length).toBe(0);
+        expect(res.body.data.data.length).toBe(0);
     });
 });

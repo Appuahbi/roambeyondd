@@ -1,12 +1,15 @@
 const authService = require("../services/authService");
 const { successResponse } = require("../utils/apiResponse");
 const asyncHandler = require("../middlewares/asyncHandler");
+const { setAuthCookie, clearAuthCookie } = require("../utils/authCookie");
 
 const register = asyncHandler(async (req, res) => {
 
     const result = await authService.registerUser(
         req.validatedData.body
     );
+
+    setAuthCookie(res, result.token);
 
     return successResponse(
         res,
@@ -22,6 +25,8 @@ const login = asyncHandler(async (req, res) => {
     const result = await authService.loginUser(
         req.validatedData.body
     );
+
+    setAuthCookie(res, result.token);
 
     return successResponse(
         res,
@@ -62,6 +67,11 @@ const changePassword = asyncHandler(async (req, res) => {
         newPassword
     );
 
+    // Re-issue a fresh token so the user stays logged in after the change
+    if (result.token) {
+        setAuthCookie(res, result.token);
+    }
+
     return successResponse(
         res,
         null,
@@ -73,7 +83,9 @@ const changePassword = asyncHandler(async (req, res) => {
 
 const logout = asyncHandler(async (req, res) => {
 
-    const token = req.headers.authorization.split(" ")[1];
+    const token = req.token;
+
+    clearAuthCookie(res);
 
     const result = await authService.logoutUser(token, req.decoded);
 
@@ -144,6 +156,21 @@ const resendVerification = asyncHandler(async (req, res) => {
 
 });
 
+const updateMe = asyncHandler(async (req, res) => {
+
+    const result = await authService.updateMeUser(
+        req.user._id,
+        req.validatedData.body
+    );
+
+    return successResponse(
+        res,
+        result,
+        "Profile updated successfully"
+    );
+
+});
+
 module.exports = {
     register,
     login,
@@ -153,5 +180,6 @@ module.exports = {
     forgotPassword,
     resetPassword,
     verifyEmail,
-    resendVerification
+    resendVerification,
+    updateMe
 };

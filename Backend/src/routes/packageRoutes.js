@@ -8,6 +8,7 @@ const protect = require("../middlewares/protect");
 const authorize = require("../middlewares/authorize");
 
 const {
+    getPackagesSchema,
     createPackageSchema,
     getPackageBySlugSchema,
     updatePackageSchema,
@@ -16,6 +17,7 @@ const {
 
 router.get(
     "/",
+    validate(getPackagesSchema),
     packageController.getPackages
 );
 

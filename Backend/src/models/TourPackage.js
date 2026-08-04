@@ -197,6 +197,15 @@ tourPackageSchema.pre("findOneAndUpdate", function () {
     }
 });
 
+tourPackageSchema.index({ title: "text", shortDescription: "text", destination: "text" });
+
+tourPackageSchema.index({ isActive: 1, category: 1, createdAt: -1 });
+tourPackageSchema.index({ isActive: 1, featured: 1, createdAt: -1 });
+tourPackageSchema.index({ isActive: 1, destination: 1 });
+tourPackageSchema.index({ isActive: 1, price: 1 });
+tourPackageSchema.index({ isActive: 1, rating: -1 });
+tourPackageSchema.index({ isActive: 1, reviewsCount: -1 });
+
 const TourPackage = mongoose.model(
     "TourPackage",
     tourPackageSchema

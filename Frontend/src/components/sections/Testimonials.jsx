@@ -1,91 +1,91 @@
-import { useState, useEffect, useCallback } from 'react'
-import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
-import { Star, ChevronLeft, ChevronRight, Quote } from 'lucide-react'
-import AnimatedSection from '../ui/AnimatedSection'
+import { useEffect, useRef, useState } from 'react';
+import { Quote, ChevronLeft, ChevronRight, Star } from 'lucide-react';
+import clsx from 'clsx';
 
-const testimonials = [
-  { name: 'Priya Sharma', destination: 'Rajasthan', rating: 5, text: 'The Rajasthan heritage tour was absolutely magical. Our guide knew every hidden courtyard and secret chai stall. The palace stays were beyond our expectations.', initials: 'PS', color: 'from-amber-500 to-gold' },
-  { name: 'Rahul Mehta', destination: 'Ladakh', rating: 5, text: 'Conquered Khardung La with RoamBeyond! The entire expedition was flawlessly organized — permits, camping gear, acclimatization schedule, everything handled.', initials: 'RM', color: 'from-primary to-primary-light' },
-  { name: 'Sarah Johnson', destination: 'Kerala', rating: 5, text: 'Our Kerala backwater houseboat experience was pure magic. Waking up to misty lagoons, fresh toddy, and the sound of water — exactly what we needed.', initials: 'SJ', color: 'from-secondary to-secondary-light' },
-  { name: 'Amit & Neha', destination: 'Manali', rating: 5, text: 'Perfect honeymoon trip! The snow-capped views, cozy cottage stays, and romantic dinner setup by the Beas river made it unforgettable.', initials: 'AN', color: 'from-rose-400 to-rose-300' },
-  { name: 'Vikram Singh', destination: 'Andaman', rating: 5, text: 'Snorkeling at Havelock Island was a dream come true. The coral reefs, crystal-clear water, and pristine beaches — RoamBeyond made it all seamless.', initials: 'VS', color: 'from-cyan-500 to-cyan-400' },
-]
+const TESTIMONIALS = [
+  { name: 'Priya Sharma', place: 'Manali Honeymoon', avatar: 'P', text: 'The team at Roam Beyond turned our honeymoon into the most magical week. The Manali cottage was stunning, the driver was lovely, and every meal felt hand-picked.', rating: 5 },
+  { name: 'Arjun Mehta', place: 'Kerala Backwaters', avatar: 'A', text: 'Booking was effortless. The houseboat in Alleppey exceeded our expectations — pristine, calm and the food was a highlight. Will book again next winter.', rating: 5 },
+  { name: 'Neha Verma', place: 'Ladakh Bike Trip', avatar: 'N', text: 'Solo female traveller here — felt safe the entire time. The crew checked in daily and adjusted plans when weather changed. 10/10.', rating: 5 },
+  { name: 'Rohan Iyer', place: 'Goa Family Trip', avatar: 'R', text: 'Loved the kid-friendly villa recommendation and the sunset cruise. My parents said it was the best Goa trip they’ve had in 20 years.', rating: 4 },
+];
 
 export default function Testimonials() {
-  const prefersReduced = useReducedMotion()
-  const [current, setCurrent] = useState(0)
-  const [direction, setDirection] = useState(0)
-  const [isPaused, setIsPaused] = useState(false)
-  const next = useCallback(() => { setDirection(1); setCurrent((p) => (p + 1) % testimonials.length) }, [])
-  const prev = useCallback(() => { setDirection(-1); setCurrent((p) => (p - 1 + testimonials.length) % testimonials.length) }, [])
-  useEffect(() => { if (isPaused || prefersReduced) return; const t = setInterval(next, 6000); return () => clearInterval(t) }, [next, isPaused, prefersReduced])
+  const [i, setI] = useState(0);
+  const pauseRef = useRef(false);
 
-  const variants = {
-    enter: (dir) => ({ x: dir > 0 ? 300 : -300, opacity: 0, scale: 0.95 }),
-    center: { x: 0, opacity: 1, scale: 1 },
-    exit: (dir) => ({ x: dir < 0 ? 300 : -300, opacity: 0, scale: 0.95 }),
-  }
+  useEffect(() => {
+    const id = setInterval(() => {
+      if (!pauseRef.current) setI((v) => (v + 1) % TESTIMONIALS.length);
+    }, 5500);
+    return () => clearInterval(id);
+  }, []);
 
-  const t = testimonials[current]
+  const go = (d) => setI((v) => (v + d + TESTIMONIALS.length) % TESTIMONIALS.length);
 
   return (
-    <section className="relative overflow-hidden bg-cream-light py-20 sm:py-24">
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="animate-blob absolute -left-20 top-10 h-[200px] w-[200px] rounded-full bg-primary/[0.02] blur-[60px]" />
-      </div>
+    <section
+      className="py-16 sm:py-20 bg-cream-gradient"
+      onMouseEnter={() => (pauseRef.current = true)}
+      onMouseLeave={() => (pauseRef.current = false)}
+    >
+      <div className="section">
+        <div className="text-center max-w-2xl mx-auto">
+          <p className="text-xs font-semibold uppercase tracking-widest text-brand-700">Loved by travellers</p>
+          <h2 className="mt-2 font-display text-3xl sm:text-4xl font-semibold text-ink-900">Real stories. Real trips.</h2>
+        </div>
 
-      <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <AnimatedSection className="mb-10 text-center">
-          <p className="mb-2 text-sm font-semibold uppercase tracking-wider text-primary">Testimonials</p>
-          <h2>What Our Travelers Say</h2>
-        </AnimatedSection>
-
-        <div className="mx-auto max-w-3xl">
-          <div className="relative overflow-hidden rounded-2xl border border-border/60 bg-gradient-to-br from-white to-cream-light/30 p-8 shadow-strong backdrop-blur-sm sm:p-10">
-            <Quote className="absolute right-6 top-6 h-16 w-16 text-primary/[0.04]" />
-            <div className="relative min-h-[220px]">
-              <AnimatePresence custom={direction} mode="wait">
-                <motion.div key={current} custom={direction} variants={variants} initial="enter" animate="center" exit="exit"
-                  transition={prefersReduced ? { duration: 0 } : { duration: 0.4, ease: [0.25, 0.1, 0.25, 1] }}
-                  drag={prefersReduced ? false : "x"} dragConstraints={prefersReduced ? undefined : { left: 0, right: 0 }} dragElastic={prefersReduced ? undefined : 0.2}
-                  onDragEnd={prefersReduced ? undefined : (_, info) => { if (info.offset.x < -50) next(); else if (info.offset.x > 50) prev() }}
-                  onMouseEnter={() => setIsPaused(true)} onMouseLeave={() => setIsPaused(false)}
-                  className={prefersReduced ? undefined : "cursor-grab active:cursor-grabbing"}>
-                  <div className="mb-4 flex gap-0.5">
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} className={`h-5 w-5 ${i < t.rating ? 'fill-gold text-gold' : 'fill-border text-border'}`} />
-                    ))}
-                  </div>
-                  <p className="mb-6 text-lg leading-relaxed text-ink italic sm:text-xl">"{t.text}"</p>
-                  <div className="flex items-center gap-3">
-                    <div className={`flex h-11 w-11 items-center justify-center rounded-lg bg-gradient-to-br ${t.color} text-sm font-bold text-white shadow-subtle`}>{t.initials}</div>
+        <div className="mt-10 relative max-w-3xl mx-auto">
+          <div className="relative overflow-hidden rounded-3xl bg-white shadow-soft p-8 sm:p-10">
+            <Quote className="absolute -top-2 -left-2 text-cream-200" size={80} />
+            <div className="relative">
+              {TESTIMONIALS.map((t, idx) => (
+                <div
+                  key={t.name}
+                  className={clsx(
+                    'transition-all duration-500',
+                    idx === i ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4 absolute inset-0 pointer-events-none'
+                  )}
+                >
+                  <p className="text-lg sm:text-xl text-ink-700 leading-relaxed">“{t.text}”</p>
+                  <div className="mt-6 flex items-center gap-3">
+                    <div className="h-11 w-11 rounded-full bg-brand-600 text-white grid place-items-center font-bold">
+                      {t.avatar}
+                    </div>
                     <div>
-                      <p className="font-semibold text-ink">{t.name}</p>
-                      <p className="text-xs text-muted">Visited <span className="font-medium text-primary">{t.destination}</span></p>
+                      <p className="font-semibold text-ink-900">{t.name}</p>
+                      <p className="text-xs text-ink-500">{t.place}</p>
+                    </div>
+                    <div className="ml-auto flex">
+                      {Array.from({ length: t.rating }).map((_, k) => (
+                        <Star key={k} size={14} className="fill-cream-500 text-cream-500" />
+                      ))}
                     </div>
                   </div>
-                </motion.div>
-              </AnimatePresence>
+                </div>
+              ))}
             </div>
-            <div className="mt-6 flex items-center justify-between border-t border-border/60 pt-4">
-              <div className="flex gap-2">
-                {testimonials.map((_, i) => (
-                  <button key={i} onClick={() => { setDirection(i > current ? 1 : -1); setCurrent(i) }}
-                    className={`rounded-full transition-all duration-300 ${i === current ? 'h-2 w-6 bg-gradient-to-r from-primary to-secondary shadow-subtle' : 'h-2 w-2 bg-border hover:bg-muted'}`} />
-                ))}
-              </div>
-              <div className="flex gap-2">
-                <button onClick={prev} className="flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-white text-muted shadow-subtle transition-all hover:border-primary hover:text-primary hover:shadow-medium hover:-translate-y-0.5">
-                  <ChevronLeft className="h-4 w-4" />
-                </button>
-                <button onClick={next} className="flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-white text-muted shadow-subtle transition-all hover:border-primary hover:text-primary hover:shadow-medium hover:-translate-y-0.5">
-                  <ChevronRight className="h-4 w-4" />
-                </button>
-              </div>
+          </div>
+
+          <div className="mt-5 flex items-center justify-center gap-2">
+            <button onClick={() => go(-1)} className="h-10 w-10 grid place-items-center rounded-full bg-white hover:bg-cream-100 shadow-soft" aria-label="Previous">
+              <ChevronLeft size={18} />
+            </button>
+            <div className="flex gap-1.5">
+              {TESTIMONIALS.map((_, k) => (
+                <button
+                  key={k}
+                  onClick={() => setI(k)}
+                  aria-label={`Slide ${k + 1}`}
+                  className={clsx('h-2 rounded-full transition-all', k === i ? 'w-8 bg-brand-600' : 'w-2 bg-cream-200')}
+                />
+              ))}
             </div>
+            <button onClick={() => go(1)} className="h-10 w-10 grid place-items-center rounded-full bg-white hover:bg-cream-100 shadow-soft" aria-label="Next">
+              <ChevronRight size={18} />
+            </button>
           </div>
         </div>
       </div>
     </section>
-  )
+  );
 }

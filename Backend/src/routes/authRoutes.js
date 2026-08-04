@@ -15,6 +15,7 @@ const {
     forgotPasswordSchema,
     resetPasswordSchema,
     verifyEmailSchema,
+    updateMeSchema,
 } = require("../validations/authValidation");
 
 router.post(
@@ -35,6 +36,13 @@ router.get(
     "/me",
     protect,
     authController.getMe
+);
+
+router.patch(
+    "/me",
+    protect,
+    validate(updateMeSchema),
+    authController.updateMe
 );
 
 router.get(

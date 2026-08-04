@@ -13,14 +13,7 @@ const createBlogSchema = z.object({
             .trim()
             .max(300, "Excerpt cannot exceed 300 characters")
             .optional(),
-        category: z.enum([
-            "Travel Tips",
-            "Destination Guides",
-            "Delhi Culture",
-            "Food & Cuisine",
-            "Adventure",
-            "News & Updates",
-        ]),
+        category: z.string().min(1),
         tags: z.array(z.string().trim()).optional().default([]),
         status: z.enum(["draft", "published"]).optional().default("draft"),
         seo: z
@@ -70,14 +63,8 @@ const updateBlogSchema = z.object({
                 .optional()
                 .nullable(),
             category: z
-                .enum([
-                    "Travel Tips",
-                    "Destination Guides",
-                    "Delhi Culture",
-                    "Food & Cuisine",
-                    "Adventure",
-                    "News & Updates",
-                ])
+                .string()
+                .min(1)
                 .optional(),
             tags: z.array(z.string().trim()).optional(),
             status: z.enum(["draft", "published"]).optional(),
@@ -128,17 +115,11 @@ const getBlogsSchema = z.object({
             .default(10),
         search: z.string().trim().optional(),
         category: z
-            .enum([
-                "Travel Tips",
-                "Destination Guides",
-                "Delhi Culture",
-                "Food & Cuisine",
-                "Adventure",
-                "News & Updates",
-            ])
+            .string()
+            .min(1)
             .optional(),
         tag: z.string().trim().optional(),
-        status: z.enum(["draft", "published"]).optional().default("published"),
+        status: z.enum(["draft", "published"]).optional(),
         sortBy: z
             .enum(["createdAt", "publishedAt", "views", "title"])
             .optional()

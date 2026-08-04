@@ -20,7 +20,7 @@ const createPackage = asyncHandler(async (req, res) => {
 
 const getPackages = asyncHandler(async (req, res) => {
 
-    const result = await packageService.getPackages();
+    const result = await packageService.getPackages(req.query);
 
     return successResponse(
         res,
@@ -34,6 +34,21 @@ const getPackageBySlug = asyncHandler(async (req, res) => {
 
     const result = await packageService.getPackageBySlug(
         req.validatedData.params.slug
+    );
+
+    return successResponse(
+        res,
+        result,
+        "Package fetched successfully"
+    );
+
+});
+
+const getPackageBySlugPreview = asyncHandler(async (req, res) => {
+
+    const result = await packageService.getPackageBySlug(
+        req.validatedData.params.slug,
+        { includeInactive: true, cache: false }
     );
 
     return successResponse(
@@ -78,6 +93,7 @@ module.exports = {
     createPackage,
     getPackages,
     getPackageBySlug,
+    getPackageBySlugPreview,
     updatePackage,
     deletePackage
 };

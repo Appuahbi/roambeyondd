@@ -1,18 +1,21 @@
-const colorMap = {
-  primary: 'bg-primary/10 text-primary',
-  secondary: 'bg-secondary/15 text-secondary',
-  gold: 'bg-gold/15 text-amber-800',
-  muted: 'bg-cream text-muted',
-  success: 'bg-success/10 text-success',
-  error: 'bg-error/10 text-error',
-}
+import clsx from 'clsx';
 
-export default function Badge({ children, color = 'primary', className = '' }) {
+export default function Badge({ children, variant = 'brand', className, icon: Icon }) {
   return (
     <span
-      className={`inline-flex items-center rounded-lg px-2.5 py-0.5 text-xs font-medium ${colorMap[color]} ${className}`}
+      className={clsx(
+        'inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold',
+        {
+          'bg-brand-100 text-brand-800': variant === 'brand',
+          'bg-cream-100 text-brand-800': variant === 'cream',
+          'bg-rose-50 text-rose-700': variant === 'danger',
+          'bg-emerald-50 text-emerald-700': variant === 'success',
+        },
+        className
+      )}
     >
+      {Icon && <Icon size={12} strokeWidth={2.4} />}
       {children}
     </span>
-  )
+  );
 }

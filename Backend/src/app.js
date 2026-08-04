@@ -29,8 +29,39 @@ const {
 
 /*
 Security Headers
+- CSP is configured explicitly so external assets (Cloudinary, Unsplash,
+  Google Fonts) and WebSocket connections keep working in production.
 */
-app.use(helmet());
+app.use(
+    helmet({
+        contentSecurityPolicy: {
+            directives: {
+                defaultSrc: ["'self'"],
+                baseUri: ["'self'"],
+                fontSrc: ["'self'", "https:", "data:"],
+                formAction: ["'self'"],
+                frameAncestors: ["'none'"],
+                imgSrc: [
+                    "'self'",
+                    "data:",
+                    "https://res.cloudinary.com",
+                    "https://images.unsplash.com"
+                ],
+                objectSrc: ["'none'"],
+                scriptSrc: ["'self'"],
+                scriptSrcAttr: ["'none'"],
+                styleSrc: ["'self'", "https:", "'unsafe-inline'"],
+                upgradeInsecureRequests: []
+            }
+        }
+    })
+);
+
+/*
+Trust the first proxy hop (nginx / Cloudflare / load balancer) so
+rate-limiters and req.ip see real client IPs instead of the proxy IP.
+*/
+app.set("trust proxy", process.env.NODE_ENV === "production" ? 1 : false);
 
 /*
 Allow frontend

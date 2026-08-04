@@ -1,8 +1,9 @@
-require("dotenv").config({ path: require("path").resolve(__dirname, "../../.env") });
+require("dotenv").config({ path: require("path").resolve(__dirname, "../.env") });
 
 const app = require("./app");
 const connectDB = require("./database/db");
 const { connectRedis, redisClient } = require("./config/redis");
+const { initSocket } = require("./config/socket");
 const logger = require("./config/logger");
 
 const PORT = process.env.PORT || 5000;
@@ -21,6 +22,8 @@ const startServer = async () => {
         const server = app.listen(PORT, () => {
             logger.info(`Server running on http://localhost:${PORT}`);
         });
+
+        initSocket(server);
 
         const shutdown = async (signal) => {
             logger.info(`${signal} received. Shutting down gracefully...`);

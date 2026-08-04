@@ -1,49 +1,171 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
-import Layout from './components/layout/Layout'
-import HomePage from './pages/HomePage'
-import PackagesPage from './pages/PackagesPage'
-import PackageDetailPage from './pages/PackageDetailPage'
-import CategoriesPage from './pages/CategoriesPage'
-import DestinationsPage from './pages/DestinationsPage'
-import AboutPage from './pages/AboutPage'
-import BlogPage from './pages/BlogPage'
-import BlogDetailPage from './pages/BlogDetailPage'
-import ContactPage from './pages/ContactPage'
-import LoginPage from './pages/LoginPage'
-import RegisterPage from './pages/RegisterPage'
-import ForgotPasswordPage from './pages/ForgotPasswordPage'
-import ResetPasswordPage from './pages/ResetPasswordPage'
-import VerifyEmailPage from './pages/VerifyEmailPage'
-import ProfilePage from './pages/ProfilePage'
-import MyEnquiriesPage from './pages/MyEnquiriesPage'
-import EnquiryDetailPage from './pages/EnquiryDetailPage'
-import NotFoundPage from './pages/NotFoundPage'
+import { Routes, Route } from 'react-router-dom';
+import { lazy, Suspense, useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+
+import Layout from './components/layout/Layout';
+import ProtectedRoute from './components/layout/ProtectedRoute';
+import AdminRoute from './components/layout/AdminRoute';
+import AdminLayout from './components/admin/AdminLayout';
+
+import Skeleton from './components/ui/Skeleton';
+
+import { fetchMeThunk } from './store/authSlice';
+
+const lazyPage = (loader) => {
+  const Page = lazy(loader);
+  return function LazyPage(props) {
+    return (
+      <Suspense
+        fallback={
+          <div className="grid gap-4 p-6">
+            <Skeleton className="h-8 w-48" />
+            <div className="grid gap-4">
+              <Skeleton className="h-40" />
+              <Skeleton className="h-40" />
+            </div>
+          </div>
+        }
+      >
+        <Page {...props} />
+      </Suspense>
+    );
+  };
+};
+
+const lazyAdmin = (loader) => {
+  const Page = lazy(loader);
+  return function AdminPage(props) {
+    return (
+      <Suspense fallback={<AdminLoader />}>
+        <Page {...props} />
+      </Suspense>
+    );
+  };
+};
+
+function AdminLoader() {
+  return (
+    <div className="grid gap-4 p-6">
+      <Skeleton className="h-8 w-48" />
+      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {Array.from({ length: 8 }).map((_, i) => (
+          <Skeleton key={i} className="h-24" />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+const CinematicHome = lazyPage(() => import('./pages/CinematicHome'));
+const PackagesList = lazyPage(() => import('./pages/PackagesList'));
+const PackageDetail = lazyPage(() => import('./pages/PackageDetail'));
+const Destinations = lazyPage(() => import('./pages/Destinations'));
+const BlogsList = lazyPage(() => import('./pages/BlogsList'));
+const BlogDetail = lazyPage(() => import('./pages/BlogDetail'));
+const Contact = lazyPage(() => import('./pages/Contact'));
+const SearchResults = lazyPage(() => import('./pages/SearchResults'));
+const Login = lazyPage(() => import('./pages/Login'));
+const Register = lazyPage(() => import('./pages/Register'));
+const ForgotPassword = lazyPage(() => import('./pages/ForgotPassword'));
+const ResetPassword = lazyPage(() => import('./pages/ResetPassword'));
+const Dashboard = lazyPage(() => import('./pages/Dashboard'));
+const Wishlist = lazyPage(() => import('./pages/Wishlist'));
+const Notifications = lazyPage(() => import('./pages/Notifications'));
+const NotFound = lazyPage(() => import('./pages/NotFound'));
+
+const AdminOverview = lazyAdmin(() => import('./pages/admin/AdminOverview'));
+const AdminPackages = lazyAdmin(() => import('./pages/admin/AdminPackages'));
+const AdminBlogs = lazyAdmin(() => import('./pages/admin/AdminBlogs'));
+const AdminCategories = lazyAdmin(() => import('./pages/admin/AdminCategories'));
+const AdminUsers = lazyAdmin(() => import('./pages/admin/AdminUsers'));
+const AdminEnquiries = lazyAdmin(() => import('./pages/admin/AdminEnquiries'));
+const AdminTripRequests = lazyAdmin(() => import('./pages/admin/AdminTripRequests'));
+const AdminContact = lazyAdmin(() => import('./pages/admin/AdminContact'));
+const AdminReviews = lazyAdmin(() => import('./pages/admin/AdminReviews'));
+const AdminNewsletter = lazyAdmin(() => import('./pages/admin/AdminNewsletter'));
+const AdminNotifications = lazyAdmin(() => import('./pages/admin/AdminNotifications'));
+const AdminSiteContent = lazyAdmin(() => import('./pages/admin/AdminSiteContent'));
 
 export default function App() {
+  const dispatch = useDispatch();
+  const initialized = useSelector((s) => s.auth.initialized);
+
+  useEffect(() => {
+    // Restore the session (httpOnly cookie) on first load. For anonymous
+    // users this resolves quickly to a 401 and leaves them signed out.
+    if (!initialized) {
+      dispatch(fetchMeThunk());
+    }
+  }, [initialized, dispatch]);
+
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route element={<Layout />}>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/packages" element={<PackagesPage />} />
-          <Route path="/packages/:slug" element={<PackageDetailPage />} />
-          <Route path="/categories" element={<CategoriesPage />} />
-          <Route path="/destinations" element={<DestinationsPage />} />
-          <Route path="/about" element={<AboutPage />} />
-          <Route path="/blog" element={<BlogPage />} />
-          <Route path="/blog/:slug" element={<BlogDetailPage />} />
-          <Route path="/contact" element={<ContactPage />} />
-          <Route path="/profile" element={<ProfilePage />} />
-          <Route path="/my-enquiries" element={<MyEnquiriesPage />} />
-          <Route path="/my-enquiries/:id" element={<EnquiryDetailPage />} />
-          <Route path="*" element={<NotFoundPage />} />
-        </Route>
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
-        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-        <Route path="/reset-password" element={<ResetPasswordPage />} />
-        <Route path="/verify-email" element={<VerifyEmailPage />} />
-      </Routes>
-    </BrowserRouter>
-  )
+    <Routes>
+      <Route element={<Layout />}>
+        <Route index element={<CinematicHome />} />
+        <Route path="cinematic" element={<CinematicHome />} />
+        <Route path="packages" element={<PackagesList />} />
+        <Route path="packages/:slug" element={<PackageDetail />} />
+        <Route path="destinations" element={<Destinations />} />
+        <Route path="blogs" element={<BlogsList />} />
+        <Route path="blogs/:slug" element={<BlogDetail />} />
+        <Route path="contact" element={<Contact />} />
+        <Route path="search" element={<SearchResults />} />
+
+        <Route path="login" element={<Login />} />
+        <Route path="register" element={<Register />} />
+        <Route path="forgot-password" element={<ForgotPassword />} />
+        <Route path="reset-password" element={<ResetPassword />} />
+
+        <Route
+          path="dashboard"
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="wishlist"
+          element={
+            <ProtectedRoute>
+              <Wishlist />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="notifications"
+          element={
+            <ProtectedRoute>
+              <Notifications />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route path="*" element={<NotFound />} />
+      </Route>
+
+      {/* Admin panel — uses its own layout (no public navbar/footer) */}
+      <Route
+        path="/admin"
+        element={
+          <AdminRoute>
+            <AdminLayout />
+          </AdminRoute>
+        }
+      >
+        <Route index element={<AdminOverview />} />
+        <Route path="packages" element={<AdminPackages />} />
+        <Route path="blogs" element={<AdminBlogs />} />
+        <Route path="categories" element={<AdminCategories />} />
+        <Route path="users" element={<AdminUsers />} />
+        <Route path="enquiries" element={<AdminEnquiries />} />
+        <Route path="trip-requests" element={<AdminTripRequests />} />
+        <Route path="contact" element={<AdminContact />} />
+        <Route path="reviews" element={<AdminReviews />} />
+        <Route path="newsletter" element={<AdminNewsletter />} />
+        <Route path="notifications" element={<AdminNotifications />} />
+        <Route path="site-content" element={<AdminSiteContent />} />
+      </Route>
+    </Routes>
+  );
 }

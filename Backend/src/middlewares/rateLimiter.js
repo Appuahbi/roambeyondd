@@ -1,8 +1,11 @@
 const rateLimit = require("express-rate-limit");
 
+const isDev = process.env.NODE_ENV === "development";
+
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: 100,
+    max: isDev ? 10000 : 100,
+    skip: () => isDev,
     message: {
         success: false,
         message: "Too many requests. Try again later.",
@@ -11,7 +14,8 @@ const limiter = rateLimit({
 
 const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: 10,
+    max: isDev ? 10000 : 10,
+    skip: () => isDev,
     message: {
         success: false,
         message: "Too many authentication attempts. Try again later.",
@@ -20,7 +24,8 @@ const authLimiter = rateLimit({
 
 const forgotPasswordLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: 5,
+    max: isDev ? 10000 : 5,
+    skip: () => isDev,
     message: {
         success: false,
         message: "Too many requests. Please try again later.",

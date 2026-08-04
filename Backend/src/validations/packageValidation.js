@@ -1,5 +1,20 @@
 const { z } = require("zod");
 
+const getPackagesSchema = z.object({
+    query: z.object({
+        page: z.string().optional().default("1"),
+        limit: z.string().optional().default("12"),
+        category: z.string().optional(),
+        destination: z.string().optional(),
+        search: z.string().optional(),
+        minPrice: z.string().optional(),
+        maxPrice: z.string().optional(),
+        sort: z.enum(["newest", "price-asc", "price-desc", "rating", "popular"]).optional().default("newest"),
+        featured: z.string().optional(),
+        includeInactive: z.string().optional()
+    }).optional()
+});
+
 const createPackageSchema = z.object({
     body: z.object({
         title: z.string()
@@ -20,13 +35,7 @@ const createPackageSchema = z.object({
             .trim()
             .default("Delhi"),
 
-        category: z.enum([
-            "Domestic Tours",
-        "Trekking Expeditions",
-        "Group Tours",
-        "Honeymoon Packages",
-        "Corporate Tours"
-        ]),
+        category: z.string().min(1),
 
         duration: z.string()
             .trim()
@@ -64,7 +73,9 @@ const createPackageSchema = z.object({
             answer: z.string().trim().min(1)
         })).optional(),
 
-        maxGroupSize: z.number().int().min(1).optional()
+        maxGroupSize: z.number().int().min(1).optional(),
+
+        isActive: z.boolean().optional()
     })
 });
 
@@ -108,13 +119,7 @@ const updatePackageSchema = z.object({
         destination: z.string()
             .optional(),
 
-        category: z.enum([
-            "Domestic Tours",
-            "Trekking Expeditions",
-            "Group Tours",
-            "Honeymoon Packages",
-            "Corporate Tours"
-        ]).optional(),
+        category: z.string().min(1).optional(),
 
         duration: z.string()
             .trim()
@@ -174,6 +179,7 @@ const deletePackageSchema = z.object({
 });
 
 module.exports = {
+    getPackagesSchema,
     createPackageSchema,
     getPackageBySlugSchema,
     updatePackageSchema,

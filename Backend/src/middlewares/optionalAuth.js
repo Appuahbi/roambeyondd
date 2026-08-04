@@ -1,6 +1,7 @@
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 const { redisClient } = require("../config/redis");
+const { AUTH_COOKIE_NAME } = require("../utils/authCookie");
 const logger = require("../config/logger");
 
 const optionalAuth = async (req, res, next) => {
@@ -12,6 +13,10 @@ const optionalAuth = async (req, res, next) => {
             req.headers.authorization.startsWith("Bearer ")
         ) {
             token = req.headers.authorization.split(" ")[1];
+        }
+
+        if (!token && req.cookies && req.cookies[AUTH_COOKIE_NAME]) {
+            token = req.cookies[AUTH_COOKIE_NAME];
         }
 
         if (!token) {

@@ -6,7 +6,7 @@ const { clearDashboardCache } = require("./dashboardService");
 const User = require("../models/User");
 
 const createEnquiry = async (enquiryData, userId) => {
-    const { tourPackage, travelDate, adults, children, notes } = enquiryData;
+    const { tourPackage, travelDate, adults, children, notes, customerName, customerEmail, customerPhone } = enquiryData;
 
     const tour = await TourPackage.findById(tourPackage);
     if (!tour) {
@@ -25,9 +25,9 @@ const createEnquiry = async (enquiryData, userId) => {
         try {
             enquiry = await Enquiry.create({
                 user: user._id,
-                customerName: user.name,
-                customerEmail: user.email,
-                customerPhone: user.phone,
+                customerName: customerName || user.name,
+                customerEmail: customerEmail || user.email,
+                customerPhone: customerPhone || user.phone,
                 tourPackage: tour._id,
                 travelDate,
                 adults,
@@ -81,8 +81,8 @@ const getAllEnquiries = async (query) => {
         sort = "latest"
     } = query;
 
-    const pageNum = Number(page);
-    const limitNum = Number(limit);
+    const pageNum = Number.isFinite(Number(page)) && Number(page) > 0 ? Number(page) : 1;
+    const limitNum = Math.min(100, Math.max(1, Number.isFinite(Number(limit)) ? Number(limit) : 10));
 
     const filter = {};
 
@@ -157,10 +157,23 @@ const updateEnquiry = async (enquiryId, updateData) => {
     ]);
 };
 
+const deleteEnquiry = async (enquiryId) => {
+    const enquiry = await Enquiry.findByIdAndDelete(enquiryId);
+
+    if (!enquiry) {
+        throw new AppError("Enquiry not found", 404);
+    }
+
+    await clearDashboardCache();
+
+    return enquiry;
+};
+
 module.exports = {
     createEnquiry,
     getMyEnquiries,
     getEnquiryById,
     getAllEnquiries,
-    updateEnquiry
+    updateEnquiry,
+    deleteEnquiry
 };

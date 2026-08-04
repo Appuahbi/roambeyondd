@@ -1,43 +1,70 @@
-import { motion } from 'framer-motion'
-import { Shield, CreditCard, Headphones, XCircle, Map, Lock } from 'lucide-react'
-import AnimatedSection from '../ui/AnimatedSection'
+import { useEffect, useState } from 'react';
+import { ShieldCheck, IndianRupee, HeartHandshake, Compass, Clock, Award } from 'lucide-react';
+import { SectionHeader } from './CategoriesSection';
+import { siteContentApi } from '../../api/endpoints';
 
-const features = [
-  { icon: Shield, title: 'Best Price Guarantee', description: 'Find a lower price? We\'ll match it and give you an extra 5% off.' },
-  { icon: CreditCard, title: 'Verified Stays', description: 'Every hotel and homestay is personally vetted by our team.' },
-  { icon: Headphones, title: '24/7 Support', description: 'Reach us anytime via call, WhatsApp, or chat — we never close.' },
-  { icon: XCircle, title: 'Easy Cancellation', description: 'Free cancellation up to 15 days before travel. No hidden fees.' },
-  { icon: Map, title: 'Local Expert Guides', description: 'Knowledgeable locals who know every hidden gem and shortcut.' },
-  { icon: Lock, title: 'Secure Payments', description: 'SSL-encrypted payments. Your financial data is always safe.' },
-]
+const ICON_MAP = {
+  'Best Price Guarantee': IndianRupee,
+  'Verified Stays': ShieldCheck,
+  'Verified stays': ShieldCheck,
+  'Transparent pricing': IndianRupee,
+  '24/7 Support': Clock,
+  '24/7 on-trip support': Clock,
+  'Easy Cancellation': Compass,
+  'Flexible bookings': Compass,
+  'Local Expert Guides': HeartHandshake,
+  'Local experts': HeartHandshake,
+  'Secure Payments': Award,
+  'Top-rated': Award,
+};
+
+const FALLBACK = [
+  { icon: ShieldCheck, title: 'Verified stays', text: 'Every hotel and homestay personally inspected by our team.' },
+  { icon: IndianRupee, title: 'Transparent pricing', text: 'No hidden fees — what you see is what you pay.' },
+  { icon: HeartHandshake, title: '24/7 on-trip support', text: 'A real person on call, every hour of your journey.' },
+  { icon: Compass, title: 'Local experts', text: 'Drivers, guides and curators who actually know the place.' },
+  { icon: Clock, title: 'Flexible bookings', text: 'Plans change — reschedule with easy, fair policies.' },
+  { icon: Award, title: 'Top-rated', text: '4.8/5 average across 8,000+ verified reviews.' },
+];
 
 export default function WhyChooseUs() {
+  const [points, setPoints] = useState(FALLBACK);
+
+  useEffect(() => {
+    siteContentApi.get('why-us')
+      .then((r) => {
+        const features = r?.data?.features;
+        if (features?.length) {
+          setPoints(features.map((f) => ({
+            icon: ICON_MAP[f.title] || ShieldCheck,
+            title: f.title,
+            text: f.description,
+          })));
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   return (
-    <section className="relative overflow-hidden bg-white py-20 sm:py-24">
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="animate-blob-alt absolute -right-20 bottom-10 h-[200px] w-[200px] rounded-full bg-secondary/[0.03] blur-[60px]" />
-      </div>
-
-      <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <AnimatedSection className="mb-10 text-center">
-          <p className="mb-2 text-sm font-semibold uppercase tracking-wider text-primary">Why Us</p>
-          <h2>Why Book With Us</h2>
-        </AnimatedSection>
-
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {features.map((feature, i) => (
-            <motion.div key={feature.title} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
-              transition={{ delay: i * 0.08 }}
-              className="group rounded-xl border border-border bg-gradient-to-br from-white to-cream-light/30 p-6 shadow-card transition-all duration-300 hover:border-primary/20 hover:shadow-card-hover hover:-translate-y-0.5">
-              <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-primary/15 to-secondary/10 shadow-subtle transition-all duration-300 group-hover:from-primary group-hover:to-primary-light group-hover:shadow-medium group-hover:scale-110">
-                <feature.icon className="h-5 w-5 text-primary transition-colors duration-300 group-hover:text-white" />
+    <section className="py-16 sm:py-20">
+      <div className="section">
+        <SectionHeader
+          eyebrow="Why Roam Beyond"
+          title="The Roam Beyond difference"
+          subtitle="Six small things that make a big difference on the road."
+        />
+        <div className="mt-10 grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          {points.map((p) => (
+            <div key={p.title} className="card p-6 hover:border-brand-200 transition">
+              <div className="grid h-12 w-12 place-items-center rounded-2xl bg-brand-50 text-brand-700">
+                <p.icon size={22} />
               </div>
-              <h3 className="mb-1 font-display text-base font-semibold text-ink">{feature.title}</h3>
-              <p className="text-sm leading-relaxed text-muted">{feature.description}</p>
-            </motion.div>
+              <h3 className="mt-4 font-display text-lg font-semibold text-ink-900">{p.title}</h3>
+              <p className="mt-1 text-sm text-ink-500">{p.text}</p>
+            </div>
           ))}
         </div>
       </div>
     </section>
-  )
+  );
 }

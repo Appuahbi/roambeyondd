@@ -1,9 +1,11 @@
 const ContactRequest = require("../models/ContactRequest");
 const AppError = require("../utils/AppError");
 const escapeRegex = require("../utils/sanitizeRegex");
+const { clearDashboardCache } = require("./dashboardService");
 
 const createContactRequest = async (requestData) => {
     const contactRequest = await ContactRequest.create(requestData);
+    await clearDashboardCache();
     return contactRequest;
 };
 
@@ -58,19 +60,22 @@ const getAllContactRequests = async (query) => {
         contactRequests = contactRequests.sort("createdAt");
     }
 
-    const skip = (Number(page) - 1) * Number(limit);
+    const pageNum = Number.isFinite(Number(page)) && Number(page) > 0 ? Number(page) : 1;
+    const limitNum = Math.min(100, Math.max(1, Number.isFinite(Number(limit)) ? Number(limit) : 10));
+
+    const skip = (pageNum - 1) * limitNum;
 
     contactRequests = contactRequests
         .skip(skip)
-        .limit(Math.min(Number(limit), 100));
+        .limit(limitNum);
 
     const total = await ContactRequest.countDocuments(filter);
     const data = await contactRequests;
 
     return {
         total,
-        page: Number(page),
-        totalPages: Math.ceil(total / Number(limit)),
+        page: pageNum,
+        totalPages: Math.ceil(total / limitNum),
         contactRequests: data
     };
 };
@@ -109,6 +114,8 @@ const updateContactRequest = async (id, updateData) => {
 
     await contactRequest.save();
 
+    await clearDashboardCache();
+
     return contactRequest;
 };
 
@@ -120,6 +127,7 @@ const deleteContactRequest = async (id) => {
     }
 
     await contactRequest.deleteOne();
+    await clearDashboardCache();
 };
 
 module.exports = {

@@ -7,8 +7,18 @@ const authorize = require("../middlewares/authorize");
 const validate = require("../middlewares/validate");
 
 const enquiryController = require("../controllers/enquiryController");
+const packageController = require("../controllers/packageController");
 
-const { updateEnquiryAdminSchema } = require("../validations/enquiryValidation");
+const { updateEnquiryAdminSchema, getEnquiryByIdSchema } = require("../validations/enquiryValidation");
+const { getPackageBySlugSchema } = require("../validations/packageValidation");
+
+router.get(
+    "/packages/slug/:slug",
+    protect,
+    authorize("admin"),
+    validate(getPackageBySlugSchema),
+    packageController.getPackageBySlugPreview
+);
 
 router.get(
     "/enquiries",
@@ -23,6 +33,14 @@ router.patch(
     authorize("admin"),
     validate(updateEnquiryAdminSchema),
     enquiryController.updateEnquiry
+);
+
+router.delete(
+    "/enquiries/:id",
+    protect,
+    authorize("admin"),
+    validate(getEnquiryByIdSchema),
+    enquiryController.deleteEnquiry
 );
 
 module.exports = router;

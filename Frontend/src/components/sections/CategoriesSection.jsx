@@ -1,59 +1,158 @@
-import { Link } from 'react-router-dom'
-import { motion } from 'framer-motion'
-import { Mountain, Waves, TreePalm, Church, Castle, Tent, Ship, Heart, Gem } from 'lucide-react'
-import AnimatedSection from '../ui/AnimatedSection'
-import { useGetPackagesQuery } from '../../services/packagesService'
+import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { Compass, Mountain, Users, Heart, Briefcase, ArrowRight } from 'lucide-react';
+import clsx from 'clsx';
+import { categoryApi } from '../../api/endpoints';
+import { useReveal } from '../../hooks/useReveal';
 
-const categoryData = [
-  { name: 'Hill Stations', icon: Mountain, description: 'Misty peaks & cool retreats' },
-  { name: 'Beaches', icon: Waves, description: 'Sun, sand & coastal vibes' },
-  { name: 'Wildlife & Nature', icon: TreePalm, description: 'Safari & ecological wonders' },
-  { name: 'Pilgrimage & Spiritual', icon: Church, description: 'Sacred journeys & temples' },
-  { name: 'Heritage & Forts', icon: Castle, description: 'Royal history & architecture' },
-  { name: 'Adventure', icon: Tent, description: 'Trekking, rafting & more' },
-  { name: 'Backwaters & Islands', icon: Ship, description: 'Lagoons & tropical escapes' },
-  { name: 'Honeymoon', icon: Heart, description: 'Romantic getaways for two' },
-  { name: 'Offbeat & Hidden Gems', icon: Gem, description: 'Unexplored & unique trails' },
-]
+const FALLBACK = [
+  {
+    name: 'Domestic Tours',
+    icon: Compass,
+    description: 'Discover rich culture, ancient heritage, and hidden gems across India.',
+    highlights: ['Heritage Stays', 'Cultural Immersion'],
+    color: 'bg-brand-50 text-brand-800 border-brand-200',
+  },
+  {
+    name: 'Trekking Expeditions',
+    icon: Mountain,
+    description: 'Breathtaking high-altitude summit trails and wilderness camping.',
+    highlights: ['Himalayan Passes', 'Expert Guides'],
+    color: 'bg-cream-100 text-brand-800 border-cream-300',
+  },
+  {
+    name: 'Group Tours',
+    icon: Users,
+    description: 'Travel with like-minded adventurers with seamless coordination.',
+    highlights: ['Family Friendly', 'Group Discounts'],
+    color: 'bg-brand-100 text-brand-900 border-brand-300',
+  },
+  {
+    name: 'Honeymoon Packages',
+    icon: Heart,
+    description: 'Romantic handpicked getaways, candlelit dinners & private stays.',
+    highlights: ['Romantic Villas', 'Private Transfer'],
+    color: 'bg-cream-50 text-brand-700 border-brand-200',
+  },
+  {
+    name: 'Corporate Tours',
+    icon: Briefcase,
+    description: 'Corporate retreats, team building offsites & luxury workcations.',
+    highlights: ['Team Offsites', 'Custom Itineraries'],
+    color: 'bg-brand-50 text-brand-900 border-cream-300',
+  },
+];
+
+const ICON_MAP = {
+  'Domestic Tours': Compass,
+  'Trekking Expeditions': Mountain,
+  'Group Tours': Users,
+  'Honeymoon Packages': Heart,
+  'Corporate Tours': Briefcase,
+};
 
 export default function CategoriesSection() {
-  const { data } = useGetPackagesQuery()
-  const packages = data?.data || []
-  const getCount = (cat) => packages.filter((p) => p.category === cat).length
+  const [cats, setCats] = useState(FALLBACK);
+  const [ref, shown] = useReveal();
+
+  useEffect(() => {
+    categoryApi
+      .list()
+      .then((r) => {
+        if (Array.isArray(r?.data) && r.data.length) {
+          setCats(
+            r.data.map((c, i) => ({
+              ...c,
+              icon: ICON_MAP[c.name] || Compass,
+              color: FALLBACK[i % FALLBACK.length].color,
+            }))
+          );
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   return (
-    <section className="relative overflow-hidden bg-cream-light py-20 sm:py-24">
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="animate-blob absolute left-1/4 top-0 h-[200px] w-[200px] rounded-full bg-primary/[0.02] blur-[60px]" />
-      </div>
+    <section ref={ref} className="py-20 sm:py-24 bg-cream-gradient relative overflow-hidden">
+      {/* Decorative background blur */}
+      <div className="absolute top-0 right-0 -mr-20 -mt-20 h-96 w-96 rounded-full bg-brand-200/30 blur-3xl pointer-events-none" />
+      <div className="absolute bottom-0 left-0 -ml-20 -mb-20 h-96 w-96 rounded-full bg-cream-300/40 blur-3xl pointer-events-none" />
 
-      <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <AnimatedSection className="mb-10 text-center">
-          <p className="mb-2 text-sm font-semibold uppercase tracking-wider text-primary">Browse by Type</p>
-          <h2>Tour Categories</h2>
-          <p className="mx-auto mt-2 max-w-lg text-muted">Find the perfect trip that matches your style</p>
-        </AnimatedSection>
+      <div className="section relative">
+        <SectionHeader
+          eyebrow="Curated Travel Styles"
+          title="Find a Journey Built For You"
+          subtitle="Whether you crave peaceful retreats or thrilling mountain summits, we have the ideal travel style."
+        />
 
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-9">
-          {categoryData.map((cat, i) => {
-            const count = getCount(cat.name)
+        <div className="mt-12 grid sm:grid-cols-2 lg:grid-cols-5 gap-5">
+          {cats.map((c, i) => {
+            const Icon = c.icon || ICON_MAP[c.name] || Compass;
             return (
-              <motion.div key={cat.name} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
-                transition={{ delay: i * 0.05 }}>
-                <Link to={`/packages?category=${encodeURIComponent(cat.name)}`}
-                  className="group flex flex-col items-center rounded-xl border border-border bg-white p-4 text-center shadow-card transition-all duration-300 hover:border-primary/20 hover:shadow-card-hover hover:-translate-y-1">
-                  <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary-light text-white shadow-subtle transition-all duration-300 group-hover:scale-110 group-hover:shadow-medium">
-                    <cat.icon className="h-5 w-5" />
+              <Link
+                key={c.name}
+                to={`/packages?category=${encodeURIComponent(c.name)}`}
+                className={clsx(
+                  'group card card-hover p-6 relative overflow-hidden flex flex-col justify-between border border-cream-200/90 hover:border-brand-300 bg-white/90 backdrop-blur-sm',
+                  shown ? 'animate-fade-up' : 'opacity-0'
+                )}
+                style={{ animationDelay: `${i * 90}ms` }}
+              >
+                <div className="absolute -right-8 -top-8 h-28 w-28 rounded-full bg-brand-50/60 group-hover:bg-brand-100/80 transition-all duration-300 group-hover:scale-125" />
+
+                <div className="relative z-10">
+                  <div className="grid h-14 w-14 place-items-center rounded-2xl bg-cream-100 text-brand-800 group-hover:bg-brand-600 group-hover:text-white transition-all duration-300 shadow-soft">
+                    <Icon size={26} />
                   </div>
-                  <h3 className="mb-1 text-xs font-bold text-ink group-hover:text-primary leading-tight">{cat.name}</h3>
-                  <p className="mb-2 text-[11px] text-muted leading-tight">{cat.description}</p>
-                  <span className="rounded-lg bg-primary/8 px-2 py-0.5 text-[11px] font-semibold text-primary">{count}</span>
-                </Link>
-              </motion.div>
-            )
+
+                  <h3 className="mt-5 font-display text-lg font-bold text-ink-900 group-hover:text-brand-800 transition-colors">
+                    {c.name}
+                  </h3>
+
+                  <p className="mt-2 text-xs text-ink-500 leading-relaxed line-clamp-3">
+                    {c.description}
+                  </p>
+                </div>
+
+                <div className="relative z-10 mt-6 pt-4 border-t border-cream-100">
+                  <div className="flex flex-wrap gap-1.5 mb-3">
+                    {(c.highlights || []).slice(0, 2).map((h) => (
+                      <span key={h} className="chip bg-cream-50 border border-cream-200/80 text-[11px]">
+                        {h}
+                      </span>
+                    ))}
+                  </div>
+
+                  <span className="inline-flex items-center gap-1.5 text-xs font-bold text-brand-700 group-hover:text-brand-900 group-hover:translate-x-1 transition-all">
+                    Browse Packages <ArrowRight size={14} />
+                  </span>
+                </div>
+              </Link>
+            );
           })}
         </div>
       </div>
     </section>
-  )
+  );
 }
+
+export function SectionHeader({ eyebrow, title, subtitle, center = true, light = false }) {
+  return (
+    <div className={clsx('max-w-3xl', center && 'mx-auto text-center')}>
+      {eyebrow && (
+        <span className={clsx('inline-block px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest mb-2', light ? 'bg-white/10 text-cream-200' : 'bg-brand-50 text-brand-800 border border-brand-200/60')}>
+          {eyebrow}
+        </span>
+      )}
+      <h2 className={clsx('font-display text-3xl sm:text-5xl font-bold tracking-tight leading-tight', light ? 'text-cream-50' : 'text-ink-900')}>
+        {title}
+      </h2>
+      {subtitle && (
+        <p className={clsx('mt-3 text-base sm:text-lg font-normal leading-relaxed', light ? 'text-cream-100/85' : 'text-ink-500')}>
+          {subtitle}
+        </p>
+      )}
+    </div>
+  );
+}
+

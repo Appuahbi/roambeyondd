@@ -41,6 +41,29 @@ describe("GET /api/admin/dashboard", () => {
         expect(res.body.data.recentEnquiries).toBeDefined();
         expect(res.body.data.categoryStats).toBeDefined();
         expect(res.body.data.monthlyTrend).toBeDefined();
+        expect(res.body.data.leadSourceStats).toBeDefined();
+        expect(res.body.data.topDestinations).toBeDefined();
+        expect(res.body.data.ratingDistribution).toBeDefined();
+        expect(res.body.data.activityTrend).toBeDefined();
+
+        expect(res.body.data.summary.packages).toBeDefined();
+        expect(res.body.data.summary.blogs).toBeDefined();
+        expect(res.body.data.summary.subscribers).toBeDefined();
+        expect(res.body.data.summary.users).toBeDefined();
+        expect(res.body.data.summary.tripRequests).toBeDefined();
+        expect(res.body.data.summary.contactRequests).toBeDefined();
+        expect(res.body.data.summary.reviewsApproved).toBeDefined();
+        expect(res.body.data.summary.reviewsPending).toBeDefined();
+
+        expect(res.body.data.activityTrend).toHaveLength(12);
+        expect(res.body.data.activityTrend[0]).toHaveProperty("key");
+        expect(res.body.data.activityTrend[0]).toHaveProperty("label");
+        expect(res.body.data.activityTrend[0]).toHaveProperty("enquiries");
+        expect(res.body.data.activityTrend[0]).toHaveProperty("tripRequests");
+        expect(res.body.data.activityTrend[0]).toHaveProperty("contactRequests");
+
+        expect(res.body.data.ratingDistribution).toHaveLength(5);
+        expect(res.body.data.ratingDistribution.map((r) => r.rating)).toEqual([1, 2, 3, 4, 5]);
     });
 
     it("should return 403 for non-admin", async () => {

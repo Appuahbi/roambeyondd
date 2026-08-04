@@ -129,7 +129,10 @@ const changePasswordUser = async (userId, currentPassword, newPassword) => {
         logger.warn({ err }, "Failed to invalidate user cache on password change");
     }
 
-    return { message: "Password changed successfully" };
+    return {
+        message: "Password changed successfully",
+        token: user.generateAuthToken()
+    };
 };
 
 const logoutUser = async (token, decoded) => {
@@ -310,6 +313,40 @@ const resendVerificationUser = async (userId) => {
     return { message: "Verification email sent" };
 };
 
+const updateMeUser = async (userId, updateData) => {
+    const allowedUpdates = {};
+    if (updateData.name !== undefined) allowedUpdates.name = updateData.name;
+    if (updateData.phone !== undefined) allowedUpdates.phone = updateData.phone;
+
+    const user = await User.findByIdAndUpdate(
+        userId,
+        allowedUpdates,
+        { new: true, runValidators: true }
+    );
+
+    if (!user) {
+        throw new AppError("User not found", 404);
+    }
+
+    try {
+        await redisClient.del(`user:${userId}`);
+    } catch (err) {
+        logger.warn({ err }, "Failed to invalidate user cache on profile update");
+    }
+
+    return {
+        user: {
+            id: user._id,
+            name: user.name,
+            email: user.email,
+            phone: user.phone,
+            role: user.role,
+            avatar: user.avatar,
+            isVerified: user.isVerified
+        }
+    };
+};
+
 module.exports = {
     registerUser,
     loginUser,
@@ -318,5 +355,6 @@ module.exports = {
     forgotPasswordUser,
     resetPasswordUser,
     verifyEmailUser,
-    resendVerificationUser
+    resendVerificationUser,
+    updateMeUser
 };

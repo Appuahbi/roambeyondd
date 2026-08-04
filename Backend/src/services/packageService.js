@@ -1,8 +1,10 @@
 const TourPackage = require("../models/TourPackage");
 const AppError = require("../utils/AppError");
 const pick = require("../utils/pick");
+const escapeRegex = require("../utils/sanitizeRegex");
 const { redisClient } = require("../config/redis");
 const { clearPackageCache } = require("../utils/cache");
+const { clearDashboardCache } = require("./dashboardService");
 const logger = require("../config/logger");
 
 /*
@@ -29,38 +31,128 @@ const createPackage = async (packageData, userId) => {
     });
 
     await clearPackageCache();
+    await clearDashboardCache();
 
     return tourPackage;
 };
 
 /*
 |--------------------------------------------------------------------------
-| Get All Packages
+| Get All Packages (with filtering, search, sort, pagination)
 |--------------------------------------------------------------------------
 */
 
-const getPackages = async () => {
-    const cacheKey = "tour-packages:all";
+const getPackages = async (query = {}) => {
+    const {
+        page = "1",
+        limit = "12",
+        category,
+        destination,
+        search,
+        minPrice,
+        maxPrice,
+        sort = "newest",
+        featured,
+        includeInactive
+    } = query;
+
+    const pageNum = Math.max(1, parseInt(page, 10) || 1);
+    const limitNum = Math.min(50, Math.max(1, parseInt(limit, 10) || 12));
+    const skip = (pageNum - 1) * limitNum;
+
+    const filter = {};
+    if (includeInactive !== "true") {
+        filter.isActive = true;
+    }
+
+    if (category) {
+        filter.category = category;
+    }
+
+    if (destination) {
+        filter.destination = { $regex: escapeRegex(destination), $options: "i" };
+    }
+
+    if (featured === "true") {
+        filter.featured = true;
+    }
+
+    if (minPrice || maxPrice) {
+        const min = Number(minPrice);
+        const max = Number(maxPrice);
+        filter.price = {};
+        if (Number.isFinite(min) && min > 0) filter.price.$gte = min;
+        if (Number.isFinite(max) && max > 0) filter.price.$lte = max;
+    }
+
+    if (search) {
+        filter.$text = { $search: search };
+    }
+
+    const sortOptions = {};
+    switch (sort) {
+        case "price-asc":
+            sortOptions.price = 1;
+            break;
+        case "price-desc":
+            sortOptions.price = -1;
+            break;
+        case "rating":
+            sortOptions.rating = -1;
+            break;
+        case "popular":
+            sortOptions.reviewsCount = -1;
+            break;
+        case "newest":
+        default:
+            sortOptions.createdAt = -1;
+            break;
+    }
+
+    // Build a stable cache key from the parsed query so different
+    // filter/sort/page combos get their own cached result.
+    const cacheKey = `tour-packages:${JSON.stringify({
+        pageNum,
+        limitNum,
+        filter,
+        sortOptions
+    })}`;
 
     try {
-        const cachedPackages = await redisClient.get(cacheKey);
-        if (cachedPackages) {
-            return JSON.parse(cachedPackages);
+        const cached = await redisClient.get(cacheKey);
+        if (cached) {
+            return JSON.parse(cached);
         }
     } catch (err) {
-        logger.warn({ err }, "Redis read failed, fetching from DB");
+        logger.warn({ err }, "Redis read failed for packages list");
     }
 
-    const packages = await TourPackage.find({ isActive: true })
-        .sort("-createdAt");
+    const [packages, total] = await Promise.all([
+        TourPackage.find(filter)
+            .sort(sortOptions)
+            .skip(skip)
+            .limit(limitNum)
+            .lean(),
+        TourPackage.countDocuments(filter)
+    ]);
+
+    const result = {
+        data: packages,
+        pagination: {
+            total,
+            page: pageNum,
+            limit: limitNum,
+            totalPages: Math.ceil(total / limitNum)
+        }
+    };
 
     try {
-        await redisClient.set(cacheKey, JSON.stringify(packages), { EX: 300 });
+        await redisClient.set(cacheKey, JSON.stringify(result), { EX: 300 });
     } catch (err) {
-        logger.warn({ err }, "Redis write failed");
+        logger.warn({ err }, "Redis write failed for packages list");
     }
 
-    return packages;
+    return result;
 };
 
 /*
@@ -69,21 +161,23 @@ const getPackages = async () => {
 |--------------------------------------------------------------------------
 */
 
-const getPackageBySlug = async (slug) => {
+const getPackageBySlug = async (slug, { includeInactive = false, cache = true } = {}) => {
     const cacheKey = `tour-package:${slug}`;
 
-    try {
-        const cachedPackage = await redisClient.get(cacheKey);
-        if (cachedPackage) {
-            return JSON.parse(cachedPackage);
+    if (cache) {
+        try {
+            const cachedPackage = await redisClient.get(cacheKey);
+            if (cachedPackage) {
+                return JSON.parse(cachedPackage);
+            }
+        } catch (err) {
+            logger.warn({ err }, "Redis read failed, fetching from DB");
         }
-    } catch (err) {
-        logger.warn({ err }, "Redis read failed, fetching from DB");
     }
 
     const tourPackage = await TourPackage.findOne({
         slug,
-        isActive: true
+        ...(!includeInactive && { isActive: true })
     }).populate(
         "createdBy",
         "name email"
@@ -111,10 +205,12 @@ const getPackageBySlug = async (slug) => {
         relatedPackages
     };
 
-    try {
-        await redisClient.set(cacheKey, JSON.stringify(result), { EX: 300 });
-    } catch (err) {
-        logger.warn({ err }, "Redis write failed");
+    if (cache) {
+        try {
+            await redisClient.set(cacheKey, JSON.stringify(result), { EX: 300 });
+        } catch (err) {
+            logger.warn({ err }, "Redis write failed");
+        }
     }
 
     return result;
@@ -166,6 +262,7 @@ const updatePackage = async (id, updateData) => {
     }
 
     await clearPackageCache();
+    await clearDashboardCache();
 
     return updatedPackage;
 };
@@ -191,6 +288,7 @@ const deletePackage = async (id) => {
     }
 
     await clearPackageCache();
+    await clearDashboardCache();
 
     return deletedPackage;
 };

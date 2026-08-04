@@ -31,7 +31,7 @@ const getBlogs = async (filters) => {
         search,
         category,
         tag,
-        status = "published",
+        status,
         sortBy = "createdAt",
         order = "desc",
     } = filters;

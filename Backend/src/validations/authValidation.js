@@ -85,6 +85,24 @@ const resetPasswordSchema = z.object({
   }),
 });
 
+const updateMeSchema = z.object({
+  body: z.object({
+    name: z
+      .string()
+      .trim()
+      .min(2, "Name must be at least 2 characters")
+      .max(50, "Name cannot exceed 50 characters")
+      .optional(),
+
+    phone: z
+      .string()
+      .regex(/^[6-9]\d{9}$/, "Please enter a valid Indian mobile number")
+      .optional(),
+  }).refine((data) => data.name !== undefined || data.phone !== undefined, {
+    message: "At least one field (name or phone) must be provided",
+  }),
+});
+
 const verifyEmailSchema = z.object({
   query: z.object({
     token: z
@@ -100,5 +118,6 @@ module.exports = {
   changePasswordSchema,
   forgotPasswordSchema,
   resetPasswordSchema,
+  updateMeSchema,
   verifyEmailSchema,
 };

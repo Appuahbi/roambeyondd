@@ -2,6 +2,7 @@ const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 const AppError = require("../utils/AppError");
 const { redisClient } = require("../config/redis");
+const { AUTH_COOKIE_NAME } = require("../utils/authCookie");
 const logger = require("../config/logger");
 
 const protect = async (req, res, next) => {
@@ -10,12 +11,17 @@ const protect = async (req, res, next) => {
 
         let token;
 
-        // Get token from Authorization header
+        // Get token from Authorization header (kept for API clients/tests)
         if (
             req.headers.authorization &&
             req.headers.authorization.startsWith("Bearer ")
         ) {
             token = req.headers.authorization.split(" ")[1];
+        }
+
+        // Fall back to the httpOnly auth cookie (browser sessions)
+        if (!token && req.cookies && req.cookies[AUTH_COOKIE_NAME]) {
+            token = req.cookies[AUTH_COOKIE_NAME];
         }
 
         // No token
@@ -107,6 +113,7 @@ const protect = async (req, res, next) => {
         // Make user available in all next middleware/controllers
         req.user = user;
         req.decoded = decoded;
+        req.token = token;
 
         next();
 

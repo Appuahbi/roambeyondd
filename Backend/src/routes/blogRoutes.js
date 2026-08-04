@@ -5,6 +5,7 @@ const authorize = require("../middlewares/authorize");
 const optionalAuth = require("../middlewares/optionalAuth");
 const validate = require("../middlewares/validate");
 const upload = require("../middlewares/upload");
+const validateImageFile = require("../middlewares/validateImageFile");
 const parseBlogFormData = require("../middlewares/parseBlogFormData");
 const {
     createBlogSchema,
@@ -35,6 +36,7 @@ router.use(protect, authorize("admin"));
 router.post(
     "/",
     upload.single("featuredImage"),
+    validateImageFile,
     parseBlogFormData,
     validate(createBlogSchema),
     blogController.createBlog
@@ -43,6 +45,7 @@ router.post(
 router.patch(
     "/:id",
     upload.single("featuredImage"),
+    validateImageFile,
     parseBlogFormData,
     validate(updateBlogSchema),
     blogController.updateBlog
@@ -57,6 +60,7 @@ router.delete(
 router.post(
     "/upload-image",
     upload.single("image"),
+    validateImageFile,
     blogController.uploadBlogImage
 );
 

@@ -13,7 +13,8 @@ const createContactRequestSchema = z.object({
 
         phone: z.string()
             .trim()
-            .regex(/^[6-9]\d{9}$/, "Please enter a valid Indian mobile number"),
+            .optional()
+            .refine((val) => !val || /^[6-9]\d{9}$/.test(val), "Please enter a valid Indian mobile number"),
 
         subject: z.string()
             .trim()

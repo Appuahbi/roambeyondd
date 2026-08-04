@@ -4,6 +4,20 @@ const createEnquirySchema = z.object({
 
     body: z.object({
 
+        customerName: z.string()
+            .trim()
+            .min(1, "Name is required")
+            .optional(),
+
+        customerEmail: z.string()
+            .trim()
+            .email("Please enter a valid email")
+            .optional(),
+
+        customerPhone: z.string()
+            .trim()
+            .optional(),
+
         tourPackage: z
             .string()
             .regex(/^[0-9a-fA-F]{24}$/, "Invalid tour package ID"),

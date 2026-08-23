@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { MapPin, ArrowRight } from 'lucide-react';
 import clsx from 'clsx';
 import { formatINR } from '../../utils/format';
@@ -19,7 +20,9 @@ const DEST_FALLBACK_IMAGES = {
 };
 
 export default function DestinationCard({ dest, feature = false, className }) {
+  const { t } = useTranslation();
   const imgSrc = optimizedImage(dest.image) || DEST_FALLBACK_IMAGES[dest.name] || imageFor({ destination: dest.name });
+  const tourCount = dest.packageCount || 5;
 
   return (
     <Link
@@ -42,7 +45,7 @@ export default function DestinationCard({ dest, feature = false, className }) {
 
       <div className="absolute top-4 left-4">
         <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/40 backdrop-blur-md text-white border border-white/20 text-xs font-semibold">
-          <MapPin size={12} className="text-cream-400" /> {dest.packageCount || 5} Tour{dest.packageCount !== 1 ? 's' : ''}
+          <MapPin size={12} className="text-cream-400" /> {t('destinations.tourCount', { count: tourCount })}
         </span>
       </div>
 
@@ -66,7 +69,7 @@ export default function DestinationCard({ dest, feature = false, className }) {
 
         <div className={clsx('mt-3.5 pt-3 border-t border-white/20 flex items-center justify-between', feature && 'mt-5')}>
           <div>
-            <p className="text-[10px] uppercase tracking-wider text-cream-200/80">From</p>
+            <p className="text-[10px] uppercase tracking-wider text-cream-200/80">{t('common.from')}</p>
             <p className="text-sm font-extrabold text-white">
               {formatINR(dest.minPrice || 8999)}
             </p>

@@ -32,6 +32,17 @@ const forgotPasswordLimiter = rateLimit({
     },
 });
 
+const otpLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: isDev ? 10000 : 10,
+    skip: () => isDev,
+    message: {
+        success: false,
+        message: "Too many OTP requests. Please try again later.",
+    },
+});
+
 module.exports = limiter;
 module.exports.authLimiter = authLimiter;
 module.exports.forgotPasswordLimiter = forgotPasswordLimiter;
+module.exports.otpLimiter = otpLimiter;

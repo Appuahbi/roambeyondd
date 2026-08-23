@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Clock, MapPin, Users, Sparkles, ArrowRight } from 'lucide-react';
 import Rating from '../ui/Rating';
 import Heart from '../ui/Heart';
@@ -6,6 +7,7 @@ import ImageWithFallback from '../ui/ImageWithFallback';
 import { formatINR, discountPercent } from '../../utils/format';
 
 export default function PackageCard({ pkg, compact = false }) {
+  const { t } = useTranslation();
   if (!pkg) return null;
   const id = pkg._id || pkg.id;
   const slug = pkg.slug;
@@ -28,12 +30,12 @@ export default function PackageCard({ pkg, compact = false }) {
         <div className="absolute top-3.5 left-3.5 flex flex-wrap gap-1.5">
           {pkg.featured && (
             <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-cream-300 text-ink-900 text-[11px] font-bold shadow-sm">
-              <Sparkles size={11} className="text-brand-700" /> Featured
+              <Sparkles size={11} className="text-brand-700" /> {t('package.featured')}
             </span>
           )}
           {off > 0 && (
             <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-brand-700 text-white text-[11px] font-bold shadow-sm">
-              {off}% OFF
+              {off}% {t('package.off')}
             </span>
           )}
         </div>
@@ -44,7 +46,7 @@ export default function PackageCard({ pkg, compact = false }) {
 
         <div className="absolute bottom-3.5 left-3.5">
           <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-black/40 backdrop-blur-md text-white border border-white/20 text-xs font-semibold">
-            {pkg.category || 'Tour'}
+            {pkg.category || t('package.tour')}
           </span>
         </div>
       </div>
@@ -75,13 +77,13 @@ export default function PackageCard({ pkg, compact = false }) {
             <Clock size={14} className="text-brand-600" /> {pkg.duration}
           </span>
           <span className="inline-flex items-center gap-1.5 text-ink-700">
-            <Users size={14} className="text-brand-600" /> Max {pkg.maxGroupSize || 12}
+            <Users size={14} className="text-brand-600" /> {t('package.maxGroup', { n: pkg.maxGroupSize || 12 })}
           </span>
         </div>
 
         <div className="mt-4 flex items-end justify-between pt-2">
           <div>
-            <p className="text-[10px] uppercase font-bold tracking-wider text-ink-400">Starting from</p>
+            <p className="text-[10px] uppercase font-bold tracking-wider text-ink-400">{t('package.startingFrom')}</p>
             {off > 0 ? (
               <div className="flex items-baseline gap-2">
                 <span className="text-xl font-extrabold text-brand-800">{formatINR(pkg.discountPrice)}</span>
@@ -92,7 +94,7 @@ export default function PackageCard({ pkg, compact = false }) {
             )}
           </div>
           <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-brand-50 text-brand-800 text-xs font-bold group-hover:bg-brand-600 group-hover:text-white transition-all">
-            Explore <ArrowRight size={13} />
+            {t('package.explore')} <ArrowRight size={13} />
           </span>
         </div>
       </div>

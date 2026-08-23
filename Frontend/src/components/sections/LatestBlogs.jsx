@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { ArrowRight, Clock } from 'lucide-react';
 import clsx from 'clsx';
 import { blogApi } from '../../api/endpoints';
@@ -9,6 +10,7 @@ import { SectionHeader } from './CategoriesSection';
 import { useReveal } from '../../hooks/useReveal';
 
 export default function LatestBlogs() {
+  const { t } = useTranslation();
   const [blogs, setBlogs] = useState([]);
   const [ref, shown] = useReveal();
   useEffect(() => {
@@ -20,13 +22,13 @@ export default function LatestBlogs() {
       <div className="section">
         <div className="flex items-end justify-between gap-4 flex-wrap">
           <SectionHeader
-            eyebrow="From the journal"
-            title="Stories, guides and tips"
-            subtitle="Practical advice and field notes from our team on the ground"
+            eyebrow={t('blogs.eyebrow')}
+            title={t('blogs.homeTitle')}
+            subtitle={t('blogs.homeSubtitle')}
             center={false}
           />
           <Link to="/blogs" className="hidden sm:inline-flex items-center gap-1 text-sm font-semibold text-brand-700 hover:text-brand-800">
-            All articles <ArrowRight size={14} />
+            {t('blogs.allArticles')} <ArrowRight size={14} />
           </Link>
         </div>
 
@@ -56,7 +58,7 @@ export default function LatestBlogs() {
             </Link>
           ))}
           {blogs.length === 0 && (
-            <p className="text-sm text-ink-500 col-span-full text-center py-8">Stories coming soon — check back!</p>
+            <p className="text-sm text-ink-500 col-span-full text-center py-8">{t('blogs.comingSoon')}</p>
           )}
         </div>
       </div>

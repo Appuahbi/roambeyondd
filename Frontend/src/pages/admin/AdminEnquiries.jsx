@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
+import { useSelector } from 'react-redux';
 import { Edit3, Trash2, Phone, Mail, Users as UsersIcon } from 'lucide-react';
 import { adminApi } from '../../api/endpoints';
 import PageHeader from '../../components/admin/PageHeader';
@@ -27,13 +28,16 @@ const STATUS_COLORS = {
 const PRIORITY_COLORS = { High: 'bg-rose-50 text-rose-700', Medium: 'bg-amber-50 text-amber-700', Low: 'bg-emerald-50 text-emerald-700' };
 
 export default function AdminEnquiries() {
+  const currentUser = useSelector((s) => s.auth.user);
+  const isAdmin = currentUser?.role === 'admin';
   const [data, setData] = useState({ enquiries: [], total: 0, page: 1, totalPages: 1 });
   const [loading, setLoading] = useState(true);
+  const [agents, setAgents] = useState([]);
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');
   const [editing, setEditing] = useState(null);
-  const [form, setForm] = useState({ leadStatus: 'New', priority: 'Medium', remarks: '' });
+  const [form, setForm] = useState({ leadStatus: 'New', priority: 'Medium', remarks: '', assignedTo: '' });
   const [busy, setBusy] = useState(false);
   const [confirm, setConfirm] = useState(null);
 
@@ -49,7 +53,14 @@ export default function AdminEnquiries() {
       .finally(() => setLoading(false));
   };
 
+  const fetchAgents = () => {
+    adminApi.users({ role: 'agent', limit: 100 })
+      .then((r) => setAgents(r?.data?.users || []))
+      .catch(() => setAgents([]));
+  };
+
   useEffect(() => { fetchRows(); }, [page, status]);
+  useEffect(() => { fetchAgents(); }, []);
   useEffect(() => { setPage(1); }, [search]);
 
   const openEdit = (e) => {
@@ -58,6 +69,7 @@ export default function AdminEnquiries() {
       leadStatus: e.leadStatus || 'New',
       priority: e.priority || 'Medium',
       remarks: e.remarks || '',
+      assignedTo: e.assignedTo?._id || '',
     });
   };
 
@@ -119,7 +131,10 @@ export default function AdminEnquiries() {
               key: 'customer', label: 'Customer',
               render: (r) => (
                 <div className="min-w-0">
-                  <p className="font-semibold text-ink-900 line-clamp-1">{r.customerName}</p>
+                  <p className="font-semibold text-ink-900 line-clamp-1 flex items-center gap-1.5">
+                    {r.customerName}
+                    {!r.user && <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-cream-100 text-ink-500">Guest</span>}
+                  </p>
                   <p className="text-xs text-ink-500 line-clamp-1">{r.enquiryNumber}</p>
                 </div>
               )
@@ -145,6 +160,12 @@ export default function AdminEnquiries() {
             },
             { key: 'status', label: 'Status', render: (r) => <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full ${STATUS_COLORS[r.leadStatus] || 'bg-cream-100 text-ink-700'}`}>{r.leadStatus}</span> },
             { key: 'priority', label: 'Priority', render: (r) => <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full ${PRIORITY_COLORS[r.priority] || ''}`}>{r.priority}</span> },
+            {
+              key: 'assigned', label: 'Assigned',
+              render: (r) => r.assignedTo
+                ? <span className="text-xs font-semibold text-ink-700 line-clamp-1">{r.assignedTo.name}</span>
+                : <span className="text-xs text-ink-400">Unassigned</span>
+            },
             { key: 'when', label: 'When', render: (r) => <span className="text-xs text-ink-500">{timeAgo(r.createdAt)}</span> },
             {
               key: 'actions', label: '', className: 'text-right', cellClassName: 'text-right',
@@ -153,9 +174,11 @@ export default function AdminEnquiries() {
                   <button onClick={() => openEdit(r)} className="h-8 w-8 grid place-items-center rounded-full hover:bg-cream-100 text-ink-700" aria-label="Edit">
                     <Edit3 size={14} />
                   </button>
-                  <button onClick={() => setConfirm(r)} className="h-8 w-8 grid place-items-center rounded-full hover:bg-rose-50 text-rose-600" aria-label="Delete">
-                    <Trash2 size={14} />
-                  </button>
+                  {isAdmin && (
+                    <button onClick={() => setConfirm(r)} className="h-8 w-8 grid place-items-center rounded-full hover:bg-rose-50 text-rose-600" aria-label="Delete">
+                      <Trash2 size={14} />
+                    </button>
+                  )}
                 </div>
               )
             },
@@ -196,6 +219,12 @@ export default function AdminEnquiries() {
                 </select>
               </Field>
             </div>
+            <Field label="Assign to" hint="Agents only see the leads assigned to them.">
+              <select className="input" value={form.assignedTo} onChange={(e) => setForm({ ...form, assignedTo: e.target.value })}>
+                <option value="">Unassigned</option>
+                {agents.map((a) => <option key={a._id} value={a._id}>{a.name} ({a.email})</option>)}
+              </select>
+            </Field>
             <Field label="Notes">
               <textarea className="input min-h-[100px]" value={form.remarks} onChange={(e) => setForm({ ...form, remarks: e.target.value })} placeholder="Internal notes…" />
             </Field>

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useInView } from '../../hooks/useReveal';
 import { statsApi } from '../../api/endpoints';
 import { Users, MapPin, Star, HeartHandshake } from 'lucide-react';
@@ -6,6 +7,7 @@ import { Users, MapPin, Star, HeartHandshake } from 'lucide-react';
 const DEFAULTS = { packagesCount: 180, destinationsCount: 45, blogCount: 62, averageRating: 4.9 };
 
 export default function StatsBar() {
+  const { t } = useTranslation();
   const [stats, setStats] = useState(DEFAULTS);
   const [ref, inView] = useInView();
 
@@ -26,10 +28,10 @@ export default function StatsBar() {
   }, []);
 
   const items = [
-    { icon: MapPin, value: stats.destinationsCount, label: 'Curated Destinations', sub: 'Across India & Beyond' },
-    { icon: Users, value: stats.packagesCount, label: 'Bespoke Tour Packages', sub: 'Hand-crafted itineraries' },
-    { icon: Star, value: stats.averageRating, label: 'Average Traveler Rating', suffix: ' ★', sub: 'From 12,000+ reviews' },
-    { icon: HeartHandshake, value: 99, label: '% Satisfaction Rate', suffix: '%', sub: '24/7 dedicated escorts' },
+    { icon: MapPin, value: stats.destinationsCount, label: t('stats.destinations'), sub: t('stats.destinationsSub') },
+    { icon: Users, value: stats.packagesCount, label: t('stats.packages'), sub: t('stats.packagesSub') },
+    { icon: Star, value: stats.averageRating, label: t('stats.rating'), suffix: ' ★', sub: t('stats.ratingSub') },
+    { icon: HeartHandshake, value: 99, label: t('stats.satisfaction'), suffix: '%', sub: t('stats.satisfactionSub') },
   ];
 
   return (

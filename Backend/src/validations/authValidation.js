@@ -25,6 +25,10 @@ const registerSchema = z.object({
         /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/,
         "Password must contain uppercase, lowercase and a number"
       ),
+
+    otp: z
+      .string()
+      .regex(/^\d{6}$/, "Please enter the 6-digit OTP sent to your phone"),
   }),
 });
 
@@ -39,6 +43,46 @@ const loginSchema = z.object({
     password: z
       .string()
       .min(1, "Password is required"),
+  }),
+});
+
+const sendOtpSchema = z.object({
+  body: z.object({
+    phone: z
+      .string()
+      .regex(/^[6-9]\d{9}$/, "Please enter a valid Indian mobile number"),
+
+    purpose: z.enum(["register", "login", "reset"], {
+      message: "Invalid OTP purpose",
+    }),
+  }),
+});
+
+const verifyOtpSchema = z.object({
+  body: z.object({
+    phone: z
+      .string()
+      .regex(/^[6-9]\d{9}$/, "Please enter a valid Indian mobile number"),
+
+    otp: z
+      .string()
+      .regex(/^\d{6}$/, "Please enter the 6-digit OTP sent to your phone"),
+
+    purpose: z.enum(["reset"], {
+      message: "Invalid OTP purpose",
+    }),
+  }),
+});
+
+const phoneLoginSchema = z.object({
+  body: z.object({
+    phone: z
+      .string()
+      .regex(/^[6-9]\d{9}$/, "Please enter a valid Indian mobile number"),
+
+    otp: z
+      .string()
+      .regex(/^\d{6}$/, "Please enter the 6-digit OTP sent to your phone"),
   }),
 });
 
@@ -115,6 +159,9 @@ const verifyEmailSchema = z.object({
 module.exports = {
   registerSchema,
   loginSchema,
+  sendOtpSchema,
+  verifyOtpSchema,
+  phoneLoginSchema,
   changePasswordSchema,
   forgotPasswordSchema,
   resetPasswordSchema,

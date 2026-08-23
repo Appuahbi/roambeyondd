@@ -1,17 +1,20 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useSelector } from 'react-redux';
 import toast from 'react-hot-toast';
 import { Mail, Phone, MapPin, Send, MessageSquare, User, Clock } from 'lucide-react';
 import Button from '../components/ui/Button';
+import Seo from '../components/seo/Seo';
 import { contactApi, tripRequestApi, siteContentApi } from '../api/endpoints';
 import { useReveal } from '../hooks/useReveal';
 
 export default function Contact() {
+  const { t } = useTranslation();
   const [params] = useSearchParams();
   const isCustom = params.get('type') === 'custom';
   const [ref, shown] = useReveal();
-  const [form, setForm] = useState({ name: '', email: '', phone: '', subject: isCustom ? 'Custom trip request' : '', message: '' });
+  const [form, setForm] = useState({ name: '', email: '', phone: '', subject: isCustom ? t('contact.customSubject') : '', message: '' });
   const [busy, setBusy] = useState(false);
   const user = useSelector((s) => s.auth.user);
   const [contactInfo, setContactInfo] = useState({ phone: '+91 99999 99999', email: 'hello@roambeyond.in', address: 'Connaught Place, New Delhi 110001', hours: 'Mon–Sat, 9am – 7pm IST' });
@@ -32,7 +35,7 @@ export default function Contact() {
       if (isCustom) {
         if (user) {
           await tripRequestApi.create({
-            destination: form.subject || 'Custom',
+            destination: form.subject || t('contact.customSubject'),
             startDate: new Date(),
             endDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
             groupSize: 2,
@@ -41,15 +44,15 @@ export default function Contact() {
             specialRequests: form.message,
           });
         } else {
-          await contactApi.create({ ...form, subject: form.subject || 'Custom trip request' });
+          await contactApi.create({ ...form, subject: form.subject || t('contact.customSubject') });
         }
       } else {
         await contactApi.create(form);
       }
-      toast.success('Message sent! We’ll respond within a few hours.');
+      toast.success(t('contact.sent'));
       setForm({ name: '', email: '', phone: '', subject: '', message: '' });
     } catch (err) {
-      toast.error(err.message || 'Could not send');
+      toast.error(err.message || t('contact.couldNotSend'));
     } finally {
       setBusy(false);
     }
@@ -57,15 +60,14 @@ export default function Contact() {
 
   return (
     <div className="bg-cream-gradient min-h-screen">
+      <Seo title={isCustom ? t('contact.titleCustom') : t('contact.titleDefault')} description={isCustom ? t('contact.subCustom') : t('contact.subDefault')} path="/contact" />
       <div className="section py-12 text-center max-w-2xl mx-auto">
-        <p className="eyebrow justify-center">Get in touch</p>
+        <p className="eyebrow justify-center">{t('contact.eyebrow')}</p>
         <h1 className="mt-2 font-display text-4xl sm:text-5xl font-semibold tracking-tight text-ink-900">
-          {isCustom ? 'Tell us about your dream trip' : 'We’re here to help'}
+          {isCustom ? t('contact.titleCustom') : t('contact.titleDefault')}
         </h1>
         <p className="mt-2.5 text-ink-500">
-          {isCustom
-            ? 'Fill this in — a trip curator will get back to you within 24 hours with a custom plan.'
-            : 'Questions, feedback or partnership ideas? Drop us a line.'}
+          {isCustom ? t('contact.subCustom') : t('contact.subDefault')}
         </p>
       </div>
 
@@ -73,32 +75,32 @@ export default function Contact() {
         <div className={`lg:col-span-7 ${shown ? 'animate-fade-up' : 'opacity-0'}`}>
           <form onSubmit={submit} className="card p-6 sm:p-8 space-y-4">
             <div className="grid sm:grid-cols-2 gap-3">
-              <Field icon={User} placeholder="Full name" value={form.name} onChange={(v) => setForm({ ...form, name: v })} required />
-              <Field icon={Mail} type="email" placeholder="Email" value={form.email} onChange={(v) => setForm({ ...form, email: v })} required />
+              <Field icon={User} placeholder={t('contact.fullName')} value={form.name} onChange={(v) => setForm({ ...form, name: v })} required />
+              <Field icon={Mail} type="email" placeholder={t('contact.email')} value={form.email} onChange={(v) => setForm({ ...form, email: v })} required />
             </div>
             <div className="grid sm:grid-cols-2 gap-3">
-              <Field icon={Phone} placeholder="Phone (optional)" value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} />
-              <Field icon={MessageSquare} placeholder="Subject" value={form.subject} onChange={(v) => setForm({ ...form, subject: v })} required={!isCustom} />
+              <Field icon={Phone} placeholder={t('contact.phoneOptional')} value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} />
+              <Field icon={MessageSquare} placeholder={t('contact.subject')} value={form.subject} onChange={(v) => setForm({ ...form, subject: v })} required={!isCustom} />
             </div>
             <div>
-              <label className="label">{isCustom ? 'Tell us about your trip' : 'Message'}</label>
+              <label className="label">{isCustom ? t('contact.tripMessage') : t('contact.message')}</label>
               <textarea
                 rows={5}
                 value={form.message}
                 onChange={(e) => setForm({ ...form, message: e.target.value })}
-                placeholder={isCustom ? 'Where, when, who, what you love…' : 'How can we help?'}
+                placeholder={isCustom ? t('contact.messagePlaceholderCustom') : t('contact.messagePlaceholderDefault')}
                 required
                 className="input"
               />
             </div>
             <Button type="submit" loading={busy} className="w-full">
-              <Send size={16} /> {isCustom ? 'Send trip request' : 'Send message'}
+              <Send size={16} /> {isCustom ? t('contact.sendTripRequest') : t('contact.sendMessage')}
             </Button>
           </form>
         </div>
         <div className={`lg:col-span-5 space-y-4 ${shown ? 'animate-fade-up' : 'opacity-0'}`}>
           <div className="card p-6">
-            <h3 className="font-display text-lg font-semibold text-ink-900">Reach us</h3>
+            <h3 className="font-display text-lg font-semibold text-ink-900">{t('contact.reachUs')}</h3>
             <ul className="mt-4 space-y-3 text-sm text-ink-700">
               {[[Phone, contactInfo.phone], [Mail, contactInfo.email], [MapPin, contactInfo.address], [Clock, contactInfo.hours]].map(([Icon, text], i) => (
                 <li key={i} className="flex items-center gap-3">
@@ -111,9 +113,9 @@ export default function Contact() {
             </ul>
           </div>
           <div className="card p-6 bg-brand-50 border-brand-200">
-            <p className="font-display text-lg font-semibold text-ink-900">Looking for a tour instead?</p>
-            <p className="mt-1 text-sm text-ink-500">Skip the form — browse our curated packages.</p>
-            <a href="/packages" className="btn-primary mt-3 w-full">Browse tours</a>
+            <p className="font-display text-lg font-semibold text-ink-900">{t('contact.lookingForTour')}</p>
+            <p className="mt-1 text-sm text-ink-500">{t('contact.skipForm')}</p>
+            <a href="/packages" className="btn-primary mt-3 w-full">{t('contact.browseTours')}</a>
           </div>
         </div>
       </div>

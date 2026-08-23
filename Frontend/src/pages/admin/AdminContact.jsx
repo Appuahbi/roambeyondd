@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
+import { useSelector } from 'react-redux';
 import { Edit3, Trash2, Phone, Mail } from 'lucide-react';
 import { adminApi } from '../../api/endpoints';
 import PageHeader from '../../components/admin/PageHeader';
@@ -20,10 +21,13 @@ const STATUS_COLORS = {
 };
 
 export default function AdminContact() {
+  const currentUser = useSelector((s) => s.auth.user);
+  const isAdmin = currentUser?.role === 'admin';
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [agents, setAgents] = useState([]);
   const [editing, setEditing] = useState(null);
-  const [form, setForm] = useState({ status: 'New', remarks: '' });
+  const [form, setForm] = useState({ status: 'New', remarks: '', assignedTo: '' });
   const [confirm, setConfirm] = useState(null);
   const [busy, setBusy] = useState(false);
 
@@ -35,11 +39,18 @@ export default function AdminContact() {
       .finally(() => setLoading(false));
   };
 
-  useEffect(fetchRows, []);
+  const fetchAgents = () => {
+    adminApi.users({ role: 'agent', limit: 100 })
+      .then((r) => setAgents(r?.data?.users || []))
+      .catch(() => setAgents([]));
+  };
+
+  useEffect(() => { fetchRows(); }, []);
+  useEffect(() => { fetchAgents(); }, []);
 
   const openEdit = (c) => {
     setEditing(c);
-    setForm({ status: c.status || 'New', remarks: c.remarks || '' });
+    setForm({ status: c.status || 'New', remarks: c.remarks || '', assignedTo: c.assignedTo?._id || '' });
   };
 
   const onSave = async () => {
@@ -102,6 +113,12 @@ export default function AdminContact() {
               )
             },
             { key: 'status', label: 'Status', render: (r) => <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full ${STATUS_COLORS[r.status] || 'bg-cream-100 text-ink-700'}`}>{r.status}</span> },
+            {
+              key: 'assigned', label: 'Assigned',
+              render: (r) => r.assignedTo
+                ? <span className="text-xs font-semibold text-ink-700 line-clamp-1">{r.assignedTo.name}</span>
+                : <span className="text-xs text-ink-400">Unassigned</span>
+            },
             { key: 'when', label: 'When', render: (r) => <span className="text-xs text-ink-500">{timeAgo(r.createdAt)}</span> },
             {
               key: 'actions', label: '', className: 'text-right', cellClassName: 'text-right',
@@ -110,9 +127,11 @@ export default function AdminContact() {
                   <button onClick={() => openEdit(r)} className="h-8 w-8 grid place-items-center rounded-full hover:bg-cream-100 text-ink-700" aria-label="Edit">
                     <Edit3 size={14} />
                   </button>
-                  <button onClick={() => setConfirm(r)} className="h-8 w-8 grid place-items-center rounded-full hover:bg-rose-50 text-rose-600" aria-label="Delete">
-                    <Trash2 size={14} />
-                  </button>
+                  {isAdmin && (
+                    <button onClick={() => setConfirm(r)} className="h-8 w-8 grid place-items-center rounded-full hover:bg-rose-50 text-rose-600" aria-label="Delete">
+                      <Trash2 size={14} />
+                    </button>
+                  )}
                 </div>
               )
             },
@@ -141,6 +160,12 @@ export default function AdminContact() {
               <Field label="Status">
                 <select className="input" value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
                   {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+                </select>
+              </Field>
+              <Field label="Assign to" hint="Agents only see the requests assigned to them.">
+                <select className="input" value={form.assignedTo} onChange={(e) => setForm({ ...form, assignedTo: e.target.value })}>
+                  <option value="">Unassigned</option>
+                  {agents.map((a) => <option key={a._id} value={a._id}>{a.name} ({a.email})</option>)}
                 </select>
               </Field>
             </div>

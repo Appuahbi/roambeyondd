@@ -1,6 +1,7 @@
 const TripRequest = require("../models/TripRequest");
 const User = require("../models/User");
 const { notifyMultiple } = require("../utils/notify");
+const { sendNewTripRequestAlert } = require("./emailService");
 const { clearDashboardCache } = require("./dashboardService");
 
 const createTripRequest = async ({ userId, userName, data }) => {
@@ -21,6 +22,9 @@ const createTripRequest = async ({ userId, userName, data }) => {
             data: { tripRequestId: tripRequest._id }
         }
     );
+
+    // Real-time email alert to admins — fire and forget, never blocks the response.
+    sendNewTripRequestAlert({ ...tripRequest.toObject(), userName }).catch(() => {});
 
     return tripRequest;
 };

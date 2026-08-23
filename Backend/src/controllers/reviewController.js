@@ -4,6 +4,7 @@ const AppError = require("../utils/AppError");
 const asyncHandler = require("../middlewares/asyncHandler");
 const { clearPackageCache } = require("../utils/cache");
 const { clearDashboardCache } = require("../services/dashboardService");
+const { notifyUser } = require("../utils/notify");
 
 const createReview = asyncHandler(async (req, res) => {
     const { slug } = req.params;
@@ -139,6 +140,21 @@ const updateReviewStatus = asyncHandler(async (req, res) => {
     if (status === "approved" || status === "rejected") {
         await computePackageRating(review.tourPackage._id);
         await clearPackageCache();
+
+        // Notify the reviewer that their review has been moderated.
+        const packageTitle = review.tourPackage.title || "tour package";
+        const approvalCopy = status === "approved"
+            ? `Your review of "${packageTitle}" has been approved and is now live.`
+            : `Your review of "${packageTitle}" was not approved.`;
+
+        notifyUser(review.user._id, {
+            type: "review_update",
+            title: `Review ${status}`,
+            message: adminReply
+                ? `${approvalCopy} The team replied: "${adminReply}"`
+                : approvalCopy,
+            data: { reviewId: review._id, packageSlug: review.tourPackage.slug, status }
+        }).catch(() => {});
     }
 
     await clearDashboardCache();

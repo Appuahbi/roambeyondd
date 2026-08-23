@@ -4,10 +4,22 @@ const AppError = require("../utils/AppError");
 const { redisClient } = require("../config/redis");
 const logger = require("../config/logger");
 const { sendPasswordResetEmail, sendVerificationEmail } = require("./emailService");
+const smsService = require("./smsService");
+
+const serializeUser = (user) => ({
+    id: user._id,
+    name: user.name,
+    email: user.email,
+    phone: user.phone,
+    role: user.role,
+    avatar: user.avatar,
+    isVerified: user.isVerified,
+    isPhoneVerified: user.isPhoneVerified
+});
 
 const registerUser = async (userData) => {
 
-    // Check if email already exists
+    // Check if email already exists before consuming the OTP
     const existingUser = await User.findOne({
         email: userData.email
     });
@@ -19,13 +31,17 @@ const registerUser = async (userData) => {
         );
     }
 
+    // SMS OTP verification is mandatory before an account can be created
+    await smsService.verifyOtp(userData.phone, "register", userData.otp);
+
     // Create user
     const user = await User.create({
         name: userData.name,
         email: userData.email,
         phone: userData.phone,
         password: userData.password,
-        role: "user"
+        role: "user",
+        isPhoneVerified: true
     });
 
     // Generate JWT
@@ -49,15 +65,7 @@ const registerUser = async (userData) => {
     // Return only the fields we want the frontend to see
     return {
         token,
-        user: {
-            id: user._id,
-            name: user.name,
-            email: user.email,
-            phone: user.phone,
-            role: user.role,
-            avatar: user.avatar,
-            isVerified: user.isVerified
-        }
+        user: serializeUser(user)
     };
 };
 
@@ -93,15 +101,72 @@ const loginUser = async (loginData) => {
 
     return {
         token,
-        user: {
-            id: user._id,
-            name: user.name,
-            email: user.email,
-            phone: user.phone,
-            role: user.role,
-            avatar: user.avatar,
-            isVerified: user.isVerified
+        user: serializeUser(user)
+    };
+};
+
+const sendOtpUser = async (phone, purpose) => {
+    const existingUser = await User.findOne({ phone });
+
+    if (purpose === "register") {
+        if (existingUser) {
+            throw new AppError("Phone number is already registered", 409);
         }
+    } else {
+        // login / reset require an existing account for this phone
+        if (!existingUser) {
+            throw new AppError("No account found with this phone number", 404);
+        }
+    }
+
+    const result = await smsService.sendOtp(phone, purpose);
+    return {
+        message: "OTP sent successfully",
+        maskedPhone: result.maskedPhone
+    };
+};
+
+const verifyOtpUser = async (phone, otp, purpose) => {
+    const user = await User.findOne({ phone });
+
+    if (!user) {
+        throw new AppError("No account found with this phone number", 404);
+    }
+
+    await smsService.verifyOtp(phone, purpose, otp);
+
+    // Issue a short-lived password reset token consumed by resetPasswordUser
+    const rawToken = crypto.randomBytes(32).toString("hex");
+    const hashedToken = crypto.createHash("sha256").update(rawToken).digest("hex");
+
+    try {
+        await redisClient.setEx(
+            `reset:${hashedToken}`,
+            900,
+            user._id.toString()
+        );
+    } catch (err) {
+        logger.warn({ err }, "Redis unavailable, cannot store reset token");
+        throw new AppError("Service temporarily unavailable. Please try again later.", 503);
+    }
+
+    return { token: rawToken };
+};
+
+const phoneLoginUser = async (phone, otp) => {
+    await smsService.verifyOtp(phone, "login", otp);
+
+    const user = await User.findOne({ phone });
+
+    if (!user) {
+        throw new AppError("No account found with this phone number", 404);
+    }
+
+    const token = user.generateAuthToken();
+
+    return {
+        token,
+        user: serializeUser(user)
     };
 };
 
@@ -335,21 +400,16 @@ const updateMeUser = async (userId, updateData) => {
     }
 
     return {
-        user: {
-            id: user._id,
-            name: user.name,
-            email: user.email,
-            phone: user.phone,
-            role: user.role,
-            avatar: user.avatar,
-            isVerified: user.isVerified
-        }
+        user: serializeUser(user)
     };
 };
 
 module.exports = {
     registerUser,
     loginUser,
+    sendOtpUser,
+    verifyOtpUser,
+    phoneLoginUser,
     changePasswordUser,
     logoutUser,
     forgotPasswordUser,

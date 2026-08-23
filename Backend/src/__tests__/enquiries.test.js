@@ -48,6 +48,9 @@ describe("POST /api/enquiries", () => {
             .post("/api/enquiries")
             .set("Authorization", `Bearer ${userToken}`)
             .send({
+                customerName: "Test User",
+                customerEmail: "test@example.com",
+                customerPhone: "9876543210",
                 tourPackage: testPackage._id.toString(),
                 travelDate: "2026-12-25",
                 adults: 2,
@@ -59,16 +62,46 @@ describe("POST /api/enquiries", () => {
         expect(res.body.success).toBe(true);
     });
 
-    it("should return 401 without auth", async () => {
+    it("should allow a guest to create an enquiry when ALLOW_GUEST_ENQUIRIES=true", async () => {
+        const previous = process.env.ALLOW_GUEST_ENQUIRIES;
+        process.env.ALLOW_GUEST_ENQUIRIES = "true";
+
         const res = await request(app)
             .post("/api/enquiries")
             .send({
+                customerName: "Guest Visitor",
+                customerEmail: "guest@example.com",
+                customerPhone: "9876543210",
                 tourPackage: testPackage._id.toString(),
                 travelDate: "2026-12-25",
                 adults: 2
             });
 
-        expect(res.status).toBe(401);
+        process.env.ALLOW_GUEST_ENQUIRIES = previous;
+
+        expect(res.status).toBe(201);
+        expect(res.body.success).toBe(true);
+        expect(res.body.data.user).toBeNull();
+    });
+
+    it("should return 403 for a guest when ALLOW_GUEST_ENQUIRIES is disabled", async () => {
+        const previous = process.env.ALLOW_GUEST_ENQUIRIES;
+        process.env.ALLOW_GUEST_ENQUIRIES = "false";
+
+        const res = await request(app)
+            .post("/api/enquiries")
+            .send({
+                customerName: "Guest Visitor",
+                customerEmail: "guest@example.com",
+                customerPhone: "9876543210",
+                tourPackage: testPackage._id.toString(),
+                travelDate: "2026-12-25",
+                adults: 2
+            });
+
+        process.env.ALLOW_GUEST_ENQUIRIES = previous;
+
+        expect(res.status).toBe(403);
     });
 
     it("should return 400 for invalid package ID", async () => {
@@ -76,6 +109,9 @@ describe("POST /api/enquiries", () => {
             .post("/api/enquiries")
             .set("Authorization", `Bearer ${userToken}`)
             .send({
+                customerName: "Test User",
+                customerEmail: "test@example.com",
+                customerPhone: "9876543210",
                 tourPackage: "invalid-id",
                 travelDate: "2026-12-25",
                 adults: 2
@@ -91,6 +127,9 @@ describe("GET /api/enquiries", () => {
             .post("/api/enquiries")
             .set("Authorization", `Bearer ${userToken}`)
             .send({
+                customerName: "Test User",
+                customerEmail: "test@example.com",
+                customerPhone: "9876543210",
                 tourPackage: testPackage._id.toString(),
                 travelDate: "2026-12-25",
                 adults: 2
@@ -115,6 +154,9 @@ describe("GET /api/enquiries/:id", () => {
             .post("/api/enquiries")
             .set("Authorization", `Bearer ${userToken}`)
             .send({
+                customerName: "Test User",
+                customerEmail: "test@example.com",
+                customerPhone: "9876543210",
                 tourPackage: testPackage._id.toString(),
                 travelDate: "2026-12-25",
                 adults: 2
@@ -146,6 +188,9 @@ describe("GET /api/enquiries/:id", () => {
             .post("/api/enquiries")
             .set("Authorization", `Bearer ${userToken}`)
             .send({
+                customerName: "Test User",
+                customerEmail: "test@example.com",
+                customerPhone: "9876543210",
                 tourPackage: testPackage._id.toString(),
                 travelDate: "2026-12-25",
                 adults: 2
@@ -166,6 +211,9 @@ describe("GET /api/admin/enquiries", () => {
             .post("/api/enquiries")
             .set("Authorization", `Bearer ${userToken}`)
             .send({
+                customerName: "Test User",
+                customerEmail: "test@example.com",
+                customerPhone: "9876543210",
                 tourPackage: testPackage._id.toString(),
                 travelDate: "2026-12-25",
                 adults: 2
@@ -188,6 +236,33 @@ describe("GET /api/admin/enquiries", () => {
 
         expect(res.status).toBe(403);
     });
+
+    it("should list guest enquiries without a linked user", async () => {
+        const previous = process.env.ALLOW_GUEST_ENQUIRIES;
+        process.env.ALLOW_GUEST_ENQUIRIES = "true";
+
+        await request(app)
+            .post("/api/enquiries")
+            .send({
+                customerName: "Guest Visitor",
+                customerEmail: "guest@example.com",
+                customerPhone: "9876543210",
+                tourPackage: testPackage._id.toString(),
+                travelDate: "2026-12-25",
+                adults: 2
+            });
+
+        process.env.ALLOW_GUEST_ENQUIRIES = previous;
+
+        const res = await request(app)
+            .get("/api/admin/enquiries")
+            .set("Authorization", `Bearer ${adminToken}`);
+
+        expect(res.status).toBe(200);
+        const guest = res.body.data.enquiries.find((e) => e.customerEmail === "guest@example.com");
+        expect(guest).toBeDefined();
+        expect(guest.user).toBeNull();
+    });
 });
 
 describe("PATCH /api/admin/enquiries/:id", () => {
@@ -198,6 +273,9 @@ describe("PATCH /api/admin/enquiries/:id", () => {
             .post("/api/enquiries")
             .set("Authorization", `Bearer ${userToken}`)
             .send({
+                customerName: "Test User",
+                customerEmail: "test@example.com",
+                customerPhone: "9876543210",
                 tourPackage: testPackage._id.toString(),
                 travelDate: "2026-12-25",
                 adults: 2

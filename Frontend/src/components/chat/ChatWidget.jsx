@@ -1,16 +1,10 @@
 import { forwardRef, useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { useTranslation } from 'react-i18next';
 import { Bot, Send, X } from 'lucide-react';
 import clsx from 'clsx';
 import ChatMarkdown from './ChatMarkdown';
 import { toggleChat, sendMessageThunk, addUserMessage } from '../../store/chatSlice';
-
-const SUGGESTIONS = [
-  'Recommend a package',
-  'Plan a trip to Goa',
-  'What is included in your packages?',
-  'Show my trip requests',
-];
 
 function TypingIndicator() {
   return (
@@ -58,6 +52,7 @@ const MessageBubble = forwardRef(function MessageBubble({ message }, ref) {
 
 export default function ChatWidget() {
   const dispatch = useDispatch();
+  const { t } = useTranslation();
   const { open, messages, sending } = useSelector((s) => s.chat);
   const user = useSelector((s) => s.auth.user);
   const [text, setText] = useState('');
@@ -66,6 +61,13 @@ export default function ChatWidget() {
   const inputRef = useRef(null);
   const latestReplyRef = useRef(null);
   const nearBottomRef = useRef(true);
+
+  const SUGGESTIONS = [
+    t('chat.suggestion1'),
+    t('chat.suggestion2'),
+    t('chat.suggestion3'),
+    t('chat.suggestion4'),
+  ];
 
   useEffect(() => {
     const el = scrollRef.current;
@@ -115,7 +117,7 @@ export default function ChatWidget() {
     <>
       <button
         onClick={() => dispatch(toggleChat())}
-        aria-label="Open Travis AI chat"
+        aria-label={t('chat.open')}
         className={clsx(
           'fixed bottom-5 right-5 z-50 grid h-14 w-14 place-items-center rounded-full shadow-float transition-all duration-200 active:scale-95',
           open ? 'bg-ink-900 text-white' : 'bg-brand-600 text-white hover:bg-brand-700'
@@ -132,9 +134,9 @@ export default function ChatWidget() {
             </div>
             <div className="flex-1 min-w-0">
               <p className="font-display font-semibold leading-tight">Travis AI</p>
-              <p className="text-xs text-white/85">Online — replies in a few seconds</p>
+              <p className="text-xs text-white/85">{t('chat.online')}</p>
             </div>
-            <button onClick={() => dispatch(toggleChat())} aria-label="Close chat" className="grid h-8 w-8 place-items-center rounded-full hover:bg-white/15 transition-colors">
+            <button onClick={() => dispatch(toggleChat())} aria-label={t('chat.close')} className="grid h-8 w-8 place-items-center rounded-full hover:bg-white/15 transition-colors">
               <X size={16} />
             </button>
           </div>
@@ -144,8 +146,7 @@ export default function ChatWidget() {
               <>
                 <div className="flex justify-start">
                   <p className="max-w-[85%] rounded-2xl rounded-bl-md bg-cream-100 px-4 py-2.5 text-sm text-ink-900">
-                    Hi {user?.name?.split(' ')[0] || 'there'}! I'm Travis AI — I can help you find tour packages, check
-                    what's included, and plan a custom trip. What are you dreaming about?
+                    {t('chat.greeting', { name: user?.name?.split(' ')[0] || t('chat.there') })}
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2 pt-1">
@@ -183,7 +184,7 @@ export default function ChatWidget() {
             {sending && elapsed > 8 && (
               <div className="flex justify-start">
                 <p className="rounded-2xl rounded-bl-md bg-cream-50 px-3 py-2 text-xs text-ink-400">
-                  Still working… the first reply on the local model can take a minute.
+                  {t('chat.stillWorking')}
                 </p>
               </div>
             )}
@@ -194,14 +195,14 @@ export default function ChatWidget() {
               ref={inputRef}
               value={text}
               onChange={(e) => setText(e.target.value)}
-              placeholder="Ask about a package, trip, or plan…"
+              placeholder={t('chat.placeholder')}
               className="input !rounded-full flex-1"
               maxLength={4000}
               disabled={sending}
             />
             <button
               type="submit"
-              aria-label="Send message"
+              aria-label={t('chat.send')}
               disabled={!text.trim() || sending}
               className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-brand-600 text-white transition hover:bg-brand-700 disabled:opacity-40 active:scale-95"
             >

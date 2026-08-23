@@ -5,7 +5,7 @@ const getUsersSchema = z.object({
         page: z.string().optional().default("1"),
         limit: z.string().optional().default("20"),
         search: z.string().optional(),
-        role: z.enum(["user", "admin"]).optional()
+        role: z.enum(["user", "admin", "agent"]).optional()
     }).optional()
 });
 
@@ -20,7 +20,7 @@ const updateUserRoleSchema = z.object({
         id: z.string().regex(/^[0-9a-fA-F]{24}$/, "Invalid user ID")
     }),
     body: z.object({
-        role: z.enum(["user", "admin"], { message: "Role must be either user or admin" })
+        role: z.enum(["user", "admin", "agent"], { message: "Role must be user, admin or agent" })
     })
 });
 
@@ -50,7 +50,7 @@ const createUserSchema = z.object({
                 "Password must contain uppercase, lowercase and a number"
             ),
 
-        role: z.enum(["user", "admin"]).optional().default("user")
+        role: z.enum(["user", "admin", "agent"]).optional().default("user")
     })
 });
 

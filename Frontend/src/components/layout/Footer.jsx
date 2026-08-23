@@ -1,11 +1,14 @@
 import { Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
-import { Instagram, Facebook, Youtube, Mail, Phone, MapPin, Send, Globe, Heart } from 'lucide-react';
+import { Instagram, Facebook, Youtube, Mail, Phone, MapPin, Send, Heart } from 'lucide-react';
 import { newsletterApi, siteContentApi } from '../../api/endpoints';
 import { LOGO_WORDMARK } from '../../utils/branding';
+import LanguageSwitcher from '../i18n/LanguageSwitcher';
 
 export default function Footer() {
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [busy, setBusy] = useState(false);
   const [contact, setContact] = useState({ phone: '+91 99999 99999', email: 'hello@roambeyond.in', address: 'Connaught Place, New Delhi' });
@@ -25,10 +28,10 @@ export default function Footer() {
     setBusy(true);
     try {
       await newsletterApi.subscribe(email.trim());
-      toast.success('Subscribed — check your inbox!');
+      toast.success(t('footer.subscribed'));
       setEmail('');
     } catch (err) {
-      toast.error(err.message || 'Could not subscribe');
+      toast.error(err.message || t('footer.subscribeError'));
     } finally {
       setBusy(false);
     }
@@ -54,8 +57,7 @@ export default function Footer() {
               />
             </Link>
             <p className="mt-4 text-sm text-cream-200/80 max-w-sm leading-relaxed">
-              Curated journeys across India — from Himalayan trails to Goa sunsets.
-              Hand-picked stays, trusted local guides, transparent pricing.
+              {t('footer.blurb')}
             </p>
             <div className="mt-5 flex gap-2">
               {[Instagram, Facebook, Youtube].map((Icon, i) => (
@@ -73,30 +75,30 @@ export default function Footer() {
 
           {/* Links */}
           <div className="lg:col-span-2">
-            <h4 className="text-sm font-semibold text-cream-100">Explore</h4>
+            <h4 className="text-sm font-semibold text-cream-100">{t('footer.explore')}</h4>
             <ul className="mt-3 space-y-2 text-sm text-cream-200/80">
-              <li><Link to="/packages" className="hover:text-white transition-colors">All Tours</Link></li>
-              <li><Link to="/destinations" className="hover:text-white transition-colors">Destinations</Link></li>
-              <li><Link to="/blogs" className="hover:text-white transition-colors">Travel Blogs</Link></li>
-              <li><Link to="/contact" className="hover:text-white transition-colors">Contact</Link></li>
+              <li><Link to="/packages" className="hover:text-white transition-colors">{t('footer.allTours')}</Link></li>
+              <li><Link to="/destinations" className="hover:text-white transition-colors">{t('footer.destinations')}</Link></li>
+              <li><Link to="/blogs" className="hover:text-white transition-colors">{t('footer.travelBlogs')}</Link></li>
+              <li><Link to="/contact" className="hover:text-white transition-colors">{t('footer.contact')}</Link></li>
             </ul>
           </div>
 
           <div className="lg:col-span-2">
-            <h4 className="text-sm font-semibold text-cream-100">Account</h4>
+            <h4 className="text-sm font-semibold text-cream-100">{t('footer.account')}</h4>
             <ul className="mt-3 space-y-2 text-sm text-cream-200/80">
-              <li><Link to="/login" className="hover:text-white transition-colors">Sign in</Link></li>
-              <li><Link to="/register" className="hover:text-white transition-colors">Create account</Link></li>
-              <li><Link to="/dashboard" className="hover:text-white transition-colors">My dashboard</Link></li>
-              <li><Link to="/wishlist" className="hover:text-white transition-colors">Wishlist</Link></li>
+              <li><Link to="/login" className="hover:text-white transition-colors">{t('footer.signIn')}</Link></li>
+              <li><Link to="/register" className="hover:text-white transition-colors">{t('footer.createAccount')}</Link></li>
+              <li><Link to="/dashboard" className="hover:text-white transition-colors">{t('footer.myDashboard')}</Link></li>
+              <li><Link to="/wishlist" className="hover:text-white transition-colors">{t('footer.wishlist')}</Link></li>
             </ul>
           </div>
 
           {/* Newsletter */}
           <div className="lg:col-span-4">
-            <h4 className="text-sm font-semibold text-cream-100">Travel inspiration, monthly</h4>
+            <h4 className="text-sm font-semibold text-cream-100">{t('footer.newsletterTitle')}</h4>
             <p className="mt-2 text-sm text-cream-200/80">
-              Get hand-picked trip ideas, off-season deals and local stories.
+              {t('footer.newsletterBlurb')}
             </p>
             <form onSubmit={subscribe} className="mt-4 flex gap-2">
               <input
@@ -104,14 +106,14 @@ export default function Footer() {
                 onChange={(e) => setEmail(e.target.value)}
                 type="email"
                 required
-                placeholder="you@email.com"
+                placeholder={t('footer.emailPlaceholder')}
                 className="flex-1 rounded-full border border-brand-700 bg-brand-800/50 px-4 py-2.5 text-sm placeholder:text-cream-200/40 focus:border-cream-300 focus:ring-2 focus:ring-cream-300/30 outline-none transition"
               />
               <button
                 disabled={busy}
                 className="inline-flex items-center gap-2 rounded-full bg-cream-100 px-5 py-2.5 text-sm font-semibold text-brand-800 hover:bg-cream-200 hover:-translate-y-px transition disabled:opacity-60 shadow-soft"
               >
-                <Send size={14} /> {busy ? '…' : 'Join'}
+                <Send size={14} /> {busy ? '…' : t('footer.join')}
               </button>
             </form>
 
@@ -125,12 +127,12 @@ export default function Footer() {
 
         <div className="mt-12 pt-6 border-t border-brand-800/70 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-cream-200/60">
           <p className="inline-flex items-center gap-1.5">
-            © {new Date().getFullYear()} Roam Beyond. Crafted with <Heart size={11} className="text-cream-300 fill-cream-300" /> in India.
+            © {new Date().getFullYear()} Roam Beyond. {t('footer.crafted')} <Heart size={11} className="text-cream-300 fill-cream-300" /> {t('footer.inIndia')}
           </p>
-          <div className="flex gap-5">
-            <a href="#" className="hover:text-white transition-colors">Privacy</a>
-            <a href="#" className="hover:text-white transition-colors">Terms</a>
-            <a href="#" className="hover:text-white transition-colors inline-flex items-center gap-1"><Globe size={12} /> IN · EN</a>
+          <div className="flex items-center gap-5">
+            <a href="#" className="hover:text-white transition-colors">{t('footer.privacy')}</a>
+            <a href="#" className="hover:text-white transition-colors">{t('footer.terms')}</a>
+            <LanguageSwitcher className="text-cream-200/80 hover:text-white hover:bg-brand-800" />
           </div>
         </div>
       </div>

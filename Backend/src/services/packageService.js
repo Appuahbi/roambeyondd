@@ -5,7 +5,44 @@ const escapeRegex = require("../utils/sanitizeRegex");
 const { redisClient } = require("../config/redis");
 const { clearPackageCache } = require("../utils/cache");
 const { clearDashboardCache } = require("./dashboardService");
+const { uploadToCloudinary, deleteFromCloudinary } = require("../config/cloudinary");
 const logger = require("../config/logger");
+
+/*
+|--------------------------------------------------------------------------
+| Upload Package Image
+|--------------------------------------------------------------------------
+*/
+
+const uploadPackageImage = async (file) => {
+    if (!file) {
+        throw new AppError("No image file provided", 400);
+    }
+
+    return uploadToCloudinary(file, {
+        folder: "delhi-tour/packages",
+    });
+};
+
+/*
+|--------------------------------------------------------------------------
+| Delete package images that were removed in an update
+|--------------------------------------------------------------------------
+*/
+
+const deleteRemovedImages = async (existingImages, nextImages) => {
+    const nextPublicIds = new Set(
+        (nextImages || []).map((img) => img && img.publicId).filter(Boolean)
+    );
+
+    const removed = (existingImages || []).filter(
+        (img) => img && img.publicId && !nextPublicIds.has(img.publicId)
+    );
+
+    await Promise.all(
+        removed.map((img) => deleteFromCloudinary(img.publicId))
+    );
+};
 
 /*
 |--------------------------------------------------------------------------
@@ -245,6 +282,18 @@ const updatePackage = async (id, updateData) => {
 
     const updates = pick(updateData, allowedUpdates);
 
+    const existing = await TourPackage.findById(id);
+    if (!existing) {
+        throw new AppError(
+            "Tour package not found",
+            404
+        );
+    }
+
+    if (updates.images) {
+        await deleteRemovedImages(existing.images, updates.images);
+    }
+
     const updatedPackage = await TourPackage.findByIdAndUpdate(
         id,
         updates,
@@ -298,5 +347,6 @@ module.exports = {
     getPackages,
     getPackageBySlug,
     updatePackage,
-    deletePackage
+    deletePackage,
+    uploadPackageImage
 };

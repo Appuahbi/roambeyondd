@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import Hero from '../components/hero/Hero.jsx';
 import StatsBar from '../components/sections/StatsBar';
 import CategoriesSection from '../components/sections/CategoriesSection';
@@ -9,18 +10,19 @@ import LatestBlogs from '../components/sections/LatestBlogs';
 import CTASection from '../components/sections/CTASection';
 
 export default function CinematicHome() {
+  const { t } = useTranslation();
   return (
     <>
       <Hero
-        brand="ROAMBEYOND"
-        tagline="Curated travel packages across India & beyond."
+        brand={t('brand')}
+        tagline={t('hero.tagline')}
       />
       <StatsBar />
       <CategoriesSection />
       <FeaturedPackages
-        title="Featured tours"
-        eyebrow="Hand-picked for you"
-        subtitle="Our travellers' favourites this season"
+        title={t('home.featuredTitle')}
+        eyebrow={t('home.featuredEyebrow')}
+        subtitle={t('home.featuredSubtitle')}
       />
       <DestinationsShowcase />
       <WhyChooseUs />

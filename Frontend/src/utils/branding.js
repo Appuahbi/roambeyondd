@@ -11,5 +11,14 @@ recolor it (CSS brightness-0 on light backgrounds; white as-is on dark).
 export const LOGO_WORDMARK =
   `${LOGO_BASE}/e_trim/w_500,q_auto,f_auto/v1785780593/roambeyondlogo_ivxlbl.png`;
 
+export const SITE_NAME = 'Roam Beyond';
+export const SITE_TAGLINE = 'Curated Tours Across India';
+
+/*
+Production origin used for canonical URLs and sitemap generation. Override at
+build time with VITE_SITE_URL so deployed pages link to the live domain.
+*/
+export const SITE_URL = import.meta.env.VITE_SITE_URL || 'http://localhost:3000';
+
 export const LOGO_FULL =
   `${LOGO_BASE}/e_trim/w_500,q_auto,f_auto/v1785780593/roambeyondlogo_ivxlbl.png`;

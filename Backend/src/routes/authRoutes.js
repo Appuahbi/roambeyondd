@@ -6,17 +6,41 @@ const authController = require("../controllers/authController");
 const validate = require("../middlewares/validate");
 const protect = require("../middlewares/protect");
 const authorize = require("../middlewares/authorize");
-const { authLimiter, forgotPasswordLimiter } = require("../middlewares/rateLimiter");
+const { authLimiter, forgotPasswordLimiter, otpLimiter } = require("../middlewares/rateLimiter");
 
 const {
     registerSchema,
     loginSchema,
+    sendOtpSchema,
+    verifyOtpSchema,
+    phoneLoginSchema,
     changePasswordSchema,
     forgotPasswordSchema,
     resetPasswordSchema,
     verifyEmailSchema,
     updateMeSchema,
 } = require("../validations/authValidation");
+
+router.post(
+    "/otp/send",
+    otpLimiter,
+    validate(sendOtpSchema),
+    authController.sendOtp
+);
+
+router.post(
+    "/otp/verify",
+    otpLimiter,
+    validate(verifyOtpSchema),
+    authController.verifyOtp
+);
+
+router.post(
+    "/phone-login",
+    authLimiter,
+    validate(phoneLoginSchema),
+    authController.phoneLogin
+);
 
 router.post(
     "/register",

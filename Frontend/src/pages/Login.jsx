@@ -1,96 +1,236 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
+import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
-import { Mail, Lock, Eye, EyeOff, LogIn, Star, ShieldCheck, MapPin } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, LogIn, Star, ShieldCheck, MapPin, Phone, MessageSquareText } from 'lucide-react';
 import Button from '../components/ui/Button';
-import { loginThunk } from '../store/authSlice';
+import Seo from '../components/seo/Seo';
+import { loginThunk, phoneLoginThunk } from '../store/authSlice';
+import { authApi } from '../api/endpoints';
 import { LOGO_WORDMARK } from '../utils/branding';
 
+const RESEND_SECONDS = 30;
+
 export default function Login() {
+  const { t } = useTranslation();
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
   const { loading } = useSelector((s) => s.auth);
+  const [method, setMethod] = useState('password');
   const [form, setForm] = useState({ email: '', password: '' });
+  const [otpForm, setOtpForm] = useState({ phone: '', otp: '' });
   const [show, setShow] = useState(false);
+  const [otpSent, setOtpSent] = useState(false);
+  const [sendingOtp, setSendingOtp] = useState(false);
+  const [resendIn, setResendIn] = useState(0);
+  const timerRef = useRef(null);
   const from = location.state?.from || '/';
 
-  const submit = async (e) => {
+  const phoneValid = /^[6-9]\d{9}$/.test(otpForm.phone);
+
+  const startResendTimer = () => {
+    setResendIn(RESEND_SECONDS);
+    clearInterval(timerRef.current);
+    timerRef.current = setInterval(() => {
+      setResendIn((s) => {
+        if (s <= 1) {
+          clearInterval(timerRef.current);
+          return 0;
+        }
+        return s - 1;
+      });
+    }, 1000);
+  };
+
+  useEffect(() => () => clearInterval(timerRef.current), []);
+
+  const switchMethod = (m) => {
+    setMethod(m);
+    setOtpSent(false);
+    setResendIn(0);
+    clearInterval(timerRef.current);
+  };
+
+  const submitPassword = async (e) => {
     e.preventDefault();
     const action = await dispatch(loginThunk(form));
     if (action.meta.requestStatus === 'fulfilled') {
-      toast.success('Welcome back!');
+      toast.success(t('auth.welcomeBack'));
       navigate(from, { replace: true });
     } else {
-      toast.error(action.payload || 'Invalid credentials');
+      toast.error(action.payload || t('auth.invalidCredentials'));
+    }
+  };
+
+  const sendOtp = async () => {
+    if (!phoneValid) return toast.error(t('auth.validPhone'));
+    setSendingOtp(true);
+    try {
+      await authApi.sendOtp({ phone: otpForm.phone, purpose: 'login' });
+      setOtpSent(true);
+      setOtpForm((f) => ({ ...f, otp: '' }));
+      startResendTimer();
+      toast.success(t('auth.otpSent', { phone: otpForm.phone }));
+    } catch (err) {
+      toast.error(err.message || t('auth.otpNotSent'));
+    } finally {
+      setSendingOtp(false);
+    }
+  };
+
+  const submitOtp = async (e) => {
+    e.preventDefault();
+    if (!otpSent) return toast.error(t('auth.otpRequired'));
+    if (!/^\d{6}$/.test(otpForm.otp)) return toast.error(t('auth.otpRequired'));
+    const action = await dispatch(phoneLoginThunk({ phone: otpForm.phone, otp: otpForm.otp }));
+    if (action.meta.requestStatus === 'fulfilled') {
+      toast.success(t('auth.welcomeBack'));
+      navigate(from, { replace: true });
+    } else {
+      toast.error(action.payload || t('auth.otpInvalid'));
     }
   };
 
   return (
     <AuthShell
-      title="Welcome back"
-      subtitle="Sign in to manage trips, wishlist and enquiries"
-      sideTitle="Plan less. Travel more."
-      sideText="Save your favourites, request custom itineraries, and pick up where you left off."
+      title={method === 'otp' ? t('auth.otpTitle') : t('auth.loginTitle')}
+      subtitle={method === 'otp' ? t('auth.otpSubtitle') : t('auth.loginSubtitle')}
+      sideTitle={t('auth.sideTitle')}
+      sideText={t('auth.sideText')}
     >
-      <form onSubmit={submit} className="space-y-4">
-        <div>
-          <label className="label">Email</label>
-          <div className="relative">
-            <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-400" />
-            <input
-              type="email"
-              required
-              className="input pl-10"
-              placeholder="you@email.com"
-              value={form.email}
-              onChange={(e) => setForm({ ...form, email: e.target.value })}
-            />
+      <Seo title={t('auth.loginTitle')} path="/login" noindex />
+
+      <div className="mb-5 grid grid-cols-2 gap-1 rounded-full bg-cream-100/80 p-1">
+        {[
+          { id: 'password', label: t('auth.loginWithPassword'), icon: Lock },
+          { id: 'otp', label: t('auth.loginWithOtp'), icon: MessageSquareText },
+        ].map((m) => (
+          <button
+            key={m.id}
+            type="button"
+            onClick={() => switchMethod(m.id)}
+            className={[
+              'flex items-center justify-center gap-1.5 rounded-full py-2 text-sm font-semibold transition-all',
+              method === m.id ? 'bg-brand-600 text-white shadow-soft' : 'text-ink-700 hover:text-brand-700',
+            ].join(' ')}
+          >
+            <m.icon size={15} /> {m.label}
+          </button>
+        ))}
+      </div>
+
+      {method === 'password' ? (
+        <form onSubmit={submitPassword} className="space-y-4">
+          <div>
+            <label className="label">{t('auth.email')}</label>
+            <div className="relative">
+              <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-400" />
+              <input
+                type="email"
+                required
+                className="input pl-10"
+                placeholder="you@email.com"
+                value={form.email}
+                onChange={(e) => setForm({ ...form, email: e.target.value })}
+              />
+            </div>
           </div>
-        </div>
-        <div>
-          <div className="flex items-center justify-between">
-            <label className="label">Password</label>
-            <Link to="/forgot-password" className="text-xs font-semibold text-brand-700 hover:text-brand-800">
-              Forgot?
-            </Link>
+          <div>
+            <div className="flex items-center justify-between">
+              <label className="label">{t('auth.password')}</label>
+              <Link to="/forgot-password" className="text-xs font-semibold text-brand-700 hover:text-brand-800">
+                {t('auth.forgot')}
+              </Link>
+            </div>
+            <div className="relative">
+              <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-400" />
+              <input
+                type={show ? 'text' : 'password'}
+                required
+                className="input pl-10 pr-10"
+                placeholder="••••••••"
+                value={form.password}
+                onChange={(e) => setForm({ ...form, password: e.target.value })}
+              />
+              <button
+                type="button"
+                onClick={() => setShow((v) => !v)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-400 hover:text-ink-700"
+                aria-label={t('auth.togglePassword')}
+              >
+                {show ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
           </div>
-          <div className="relative">
-            <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-400" />
-            <input
-              type={show ? 'text' : 'password'}
-              required
-              className="input pl-10 pr-10"
-              placeholder="••••••••"
-              value={form.password}
-              onChange={(e) => setForm({ ...form, password: e.target.value })}
-            />
-            <button
-              type="button"
-              onClick={() => setShow((v) => !v)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-400 hover:text-ink-700"
-              aria-label="Toggle password visibility"
-            >
-              {show ? <EyeOff size={16} /> : <Eye size={16} />}
-            </button>
+          <Button type="submit" loading={loading} className="w-full">
+            <LogIn size={16} /> {t('auth.signIn')}
+          </Button>
+        </form>
+      ) : (
+        <form onSubmit={submitOtp} className="space-y-4">
+          <div>
+            <label className="label">{t('auth.phone')}</label>
+            <div className="relative">
+              <Phone size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-400" />
+              <span className="absolute left-10 top-1/2 -translate-y-1/2 text-sm text-ink-500">+91</span>
+              <input
+                required
+                inputMode="numeric"
+                pattern="[6-9][0-9]{9}"
+                maxLength={10}
+                className="input pl-16 pr-28"
+                placeholder="98765 43210"
+                value={otpForm.phone}
+                onChange={(e) => {
+                  setOtpForm({ ...otpForm, phone: e.target.value.replace(/\D/g, '') });
+                  setOtpSent(false);
+                }}
+              />
+              <button
+                type="button"
+                onClick={sendOtp}
+                disabled={sendingOtp || resendIn > 0}
+                className="absolute right-1.5 top-1/2 -translate-y-1/2 text-xs font-semibold text-brand-700 hover:text-brand-800 disabled:opacity-50 disabled:cursor-not-allowed px-2.5 py-1.5 rounded-lg bg-brand-50"
+              >
+                {sendingOtp ? '…' : resendIn > 0 ? t('auth.resendIn', { seconds: resendIn }) : t('auth.sendOtp')}
+              </button>
+            </div>
           </div>
-        </div>
-        <Button type="submit" loading={loading} className="w-full">
-          <LogIn size={16} /> Sign in
-        </Button>
-        <p className="text-center text-sm text-ink-500">
-          New here?{' '}
-          <Link to="/register" className="font-semibold text-brand-700 hover:text-brand-800">
-            Create an account
-          </Link>
-        </p>
-      </form>
+          {otpSent && (
+            <div className="relative animate-fade-up">
+              <label className="label">{t('auth.otpPlaceholder')}</label>
+              <input
+                autoFocus
+                required
+                inputMode="numeric"
+                maxLength={6}
+                className="input pl-10 text-center tracking-[0.5em] font-semibold"
+                placeholder="______"
+                value={otpForm.otp}
+                onChange={(e) => setOtpForm({ ...otpForm, otp: e.target.value.replace(/\D/g, '').slice(0, 6) })}
+              />
+            </div>
+          )}
+          <Button type="submit" loading={loading} className="w-full">
+            <LogIn size={16} /> {t('auth.signIn')}
+          </Button>
+        </form>
+      )}
+
+      <p className="mt-4 text-center text-sm text-ink-500">
+        {t('auth.newHere')}{' '}
+        <Link to="/register" className="font-semibold text-brand-700 hover:text-brand-800">
+          {t('auth.createAccount')}
+        </Link>
+      </p>
     </AuthShell>
   );
 }
 
 export function AuthShell({ children, title, subtitle, sideTitle, sideText }) {
+  const { t } = useTranslation();
   return (
     <div className="min-h-[calc(100vh-67px)] grid lg:grid-cols-2 bg-cream-gradient">
       <div className="flex items-center justify-center p-6 sm:p-10">
@@ -128,10 +268,10 @@ export function AuthShell({ children, title, subtitle, sideTitle, sideText }) {
                   <Star key={i} size={14} className="fill-cream-300 text-cream-300" />
                 ))}
               </span>
-              4.9/5 rating
+              {t('auth.rating')}
             </span>
-            <span className="inline-flex items-center gap-1.5"><MapPin size={14} /> 45+ destinations</span>
-            <span className="inline-flex items-center gap-1.5"><ShieldCheck size={14} /> Verified stays</span>
+            <span className="inline-flex items-center gap-1.5"><MapPin size={14} /> {t('auth.destinations')}</span>
+            <span className="inline-flex items-center gap-1.5"><ShieldCheck size={14} /> {t('auth.verifiedStays')}</span>
           </div>
         </div>
       </div>

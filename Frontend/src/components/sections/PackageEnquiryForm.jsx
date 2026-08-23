@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 import { useSelector } from 'react-redux';
 import { Calendar, Users, MessageSquare, User, Phone, Mail, Send } from 'lucide-react';
@@ -8,6 +9,7 @@ import { useReveal } from '../../hooks/useReveal';
 import Button from '../ui/Button';
 
 export default function PackageEnquiryForm({ pkg, mode = 'enquiry' }) {
+  const { t } = useTranslation();
   const user = useSelector((s) => s.auth.user);
   const [ref, shown] = useReveal();
   const [form, setForm] = useState(() => ({
@@ -36,11 +38,12 @@ export default function PackageEnquiryForm({ pkg, mode = 'enquiry' }) {
 
   const submit = async (e) => {
     e.preventDefault();
-    if (!user) {
+    // Custom trip requests still require an account (backend enforces it).
+    if (!user && mode === 'trip') {
       navigate('/login', { state: { from: location.pathname } });
       return;
     }
-    if (!form.travelDate) return toast.error('Pick a travel date');
+    if (!form.travelDate) return toast.error(t('enquiry.pickDate'));
     setBusy(true);
     try {
       if (mode === 'trip') {
@@ -53,7 +56,7 @@ export default function PackageEnquiryForm({ pkg, mode = 'enquiry' }) {
           children: Number(form.children || 0),
           specialRequests: form.notes,
         });
-        toast.success('Trip request sent! Our team will reach out within 24 hours.');
+        toast.success(t('enquiry.tripSent'));
       } else {
         await enquiryApi.create({
           customerName: form.name,
@@ -65,11 +68,16 @@ export default function PackageEnquiryForm({ pkg, mode = 'enquiry' }) {
           children: Number(form.children || 0),
           notes: form.notes,
         });
-        toast.success('Enquiry submitted! Reference number sent to your email.');
+        toast.success(t('enquiry.submitted'));
       }
       setForm({ name: user?.name || '', email: user?.email || '', phone: user?.phone || '', travelDate: '', adults: 2, children: 0, notes: '' });
     } catch (err) {
-      toast.error(err.message || 'Could not submit');
+      // Guest enquiries are rejected when the feature is off — send them to login.
+      if (!user && mode === 'enquiry' && err.response?.status === 403) {
+        navigate('/login', { state: { from: location.pathname } });
+        return;
+      }
+      toast.error(err.message || t('enquiry.couldNotSubmit'));
     } finally {
       setBusy(false);
     }
@@ -82,43 +90,48 @@ export default function PackageEnquiryForm({ pkg, mode = 'enquiry' }) {
       className={`card p-6 sm:p-7 ${shown ? 'animate-fade-up' : 'opacity-0'}`}
     >
       <p className="text-xs font-semibold uppercase tracking-widest text-brand-700">
-        {mode === 'trip' ? 'Custom trip request' : 'Send enquiry'}
+        {mode === 'trip' ? t('enquiry.customTripTitle') : t('enquiry.sendEnquiry')}
       </p>
       <h3 className="mt-1 font-display text-2xl font-semibold text-ink-900">
-        {mode === 'trip' ? 'Let us craft this trip for you' : 'Plan this trip'}
+        {mode === 'trip' ? t('enquiry.craftTrip') : t('enquiry.planThisTrip')}
       </h3>
       <p className="mt-1 text-sm text-ink-500">
-        We’ll respond within 24 hours. No payment required to enquire.
+        {t('enquiry.respond24h')}
       </p>
+      {!user && (
+        <p className="mt-1 text-xs font-semibold text-brand-700">
+          {t('enquiry.guestNote')}
+        </p>
+      )}
 
       <div className="mt-5 grid sm:grid-cols-2 gap-3">
-        <Field icon={User} placeholder="Full name" value={form.name} onChange={(v) => setForm({ ...form, name: v })} required />
-        <Field icon={Mail} type="email" placeholder="Email" value={form.email} onChange={(v) => setForm({ ...form, email: v })} required />
-        <Field icon={Phone} placeholder="Phone (+91)" value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} required />
+        <Field icon={User} placeholder={t('enquiry.fullName')} value={form.name} onChange={(v) => setForm({ ...form, name: v })} required />
+        <Field icon={Mail} type="email" placeholder={t('enquiry.email')} value={form.email} onChange={(v) => setForm({ ...form, email: v })} required />
+        <Field icon={Phone} placeholder={t('enquiry.phone')} value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} required />
         <Field icon={Calendar} type="date" value={form.travelDate} onChange={(v) => setForm({ ...form, travelDate: v })} required />
-        <Field icon={Users} type="number" min={1} value={form.adults} onChange={(v) => setForm({ ...form, adults: v })} label="Adults" />
-        <Field icon={Users} type="number" min={0} value={form.children} onChange={(v) => setForm({ ...form, children: v })} label="Children" />
+        <Field icon={Users} type="number" min={1} value={form.adults} onChange={(v) => setForm({ ...form, adults: v })} label={t('enquiry.adults')} />
+        <Field icon={Users} type="number" min={0} value={form.children} onChange={(v) => setForm({ ...form, children: v })} label={t('enquiry.children')} />
       </div>
 
       <div className="mt-3">
-        <label className="label">Notes (optional)</label>
+        <label className="label">{t('enquiry.notes')}</label>
         <div className="relative">
           <MessageSquare size={16} className="absolute left-3.5 top-3 text-ink-400" />
           <textarea
             rows={3}
             value={form.notes}
             onChange={(e) => setForm({ ...form, notes: e.target.value })}
-            placeholder="Hotel preference, food requirements, special occasions…"
+            placeholder={t('enquiry.notesPlaceholder')}
             className="input pl-10 py-3"
           />
         </div>
       </div>
 
       <Button type="submit" loading={busy} className="w-full mt-4">
-        <Send size={16} /> {mode === 'trip' ? 'Send trip request' : 'Send enquiry'}
+        <Send size={16} /> {mode === 'trip' ? t('enquiry.sendTripRequest') : t('enquiry.sendEnquiry')}
       </Button>
       <p className="mt-2 text-center text-xs text-ink-500">
-        By submitting, you agree to our <a href="#" className="text-brand-700 font-semibold">Privacy Policy</a>.
+        {t('enquiry.agree')} <a href="#" className="text-brand-700 font-semibold">{t('footer.privacy')}</a>.
       </p>
     </form>
   );

@@ -1,12 +1,15 @@
 import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
+import { useTranslation } from 'react-i18next';
 import { Heart } from 'lucide-react';
 import { fetchWishlistThunk } from '../store/wishlistSlice';
 import PackageCard from '../components/sections/PackageCard';
 import Skeleton from '../components/ui/Skeleton';
+import Seo from '../components/seo/Seo';
 
 export default function Wishlist() {
+  const { t } = useTranslation();
   const dispatch = useDispatch();
   const { items, loading } = useSelector((s) => s.wishlist);
 
@@ -16,14 +19,15 @@ export default function Wishlist() {
 
   return (
     <div className="bg-cream-gradient min-h-screen">
+      <Seo title={t('wishlistPage.title')} path="/wishlist" noindex />
       <div className="section py-10">
         <div className="flex items-end justify-between flex-wrap gap-3">
           <div>
-            <p className="eyebrow">Saved trips</p>
-            <h1 className="mt-2 font-display text-3xl sm:text-4xl font-semibold tracking-tight text-ink-900">Your wishlist</h1>
-            <p className="mt-1.5 text-sm text-ink-500">{items.length} trip{items.length === 1 ? '' : 's'} saved</p>
+            <p className="eyebrow">{t('wishlistPage.eyebrow')}</p>
+            <h1 className="mt-2 font-display text-3xl sm:text-4xl font-semibold tracking-tight text-ink-900">{t('wishlistPage.title')}</h1>
+            <p className="mt-1.5 text-sm text-ink-500">{t('wishlistPage.savedCount', { count: items.length })}</p>
           </div>
-          <Link to="/packages" className="btn-primary">Find more trips</Link>
+          <Link to="/packages" className="btn-primary">{t('wishlistPage.findMoreTrips')}</Link>
         </div>
       </div>
 
@@ -42,9 +46,9 @@ export default function Wishlist() {
             <div className="mx-auto grid place-items-center h-16 w-16 rounded-full bg-cream-100 text-brand-700">
               <Heart size={28} />
             </div>
-            <h2 className="mt-4 font-display text-xl font-semibold">No saved trips yet</h2>
-            <p className="mt-1 text-sm text-ink-500">Tap the heart on any tour to add it here.</p>
-            <Link to="/packages" className="btn-primary mt-5 inline-flex">Browse tours</Link>
+            <h2 className="mt-4 font-display text-xl font-semibold">{t('wishlistPage.emptyTitle')}</h2>
+            <p className="mt-1 text-sm text-ink-500">{t('wishlistPage.emptyText')}</p>
+            <Link to="/packages" className="btn-primary mt-5 inline-flex">{t('wishlistPage.browseTours')}</Link>
           </div>
         ) : (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">

@@ -4,6 +4,8 @@ const enquiryController = require("../controllers/enquiryController");
 
 const protect = require("../middlewares/protect");
 
+const optionalAuth = require("../middlewares/optionalAuth");
+
 const validate = require("../middlewares/validate");
 
 const {
@@ -22,10 +24,11 @@ User Routes
 /*
 Submit a new enquiry
 POST /api/enquiries
+Guests (no login) are allowed when ALLOW_GUEST_ENQUIRIES=true.
 */
 router.post(
     "/",
-    protect,
+    optionalAuth,
     validate(createEnquirySchema),
     enquiryController.createEnquiry
 );

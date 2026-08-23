@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   Search, ArrowRight, Star, ShieldCheck, Compass, MapPin, ChevronDown, Calendar,
 } from 'lucide-react';
@@ -21,8 +22,6 @@ const item = {
   hidden: { opacity: 0, y: 26 },
   show: { opacity: 1, y: 0, transition: SPRING },
 };
-
-const HEADLINE = ['Travel', 'beyond', 'the'];
 
 const FALLBACK = [
   { slug: 'kashmir', title: 'The Frozen Valley', destination: 'Kashmir · Winter', price: 14999, discountPrice: 11999 },
@@ -47,6 +46,8 @@ const normalize = (p) => {
 const FALLBACK_ITEMS = FALLBACK.map((c) => normalize({ ...c, _id: c.slug }));
 
 function CountUp({ to, decimals = 0, suffix = '' }) {
+  const { i18n } = useTranslation();
+  const locale = i18n.language.startsWith('hi') ? 'hi-IN' : 'en-IN';
   const ref = useRef(null);
   const inView = useInView(ref, { once: true, margin: '-40px' });
   const [val, setVal] = useState(0);
@@ -61,7 +62,7 @@ function CountUp({ to, decimals = 0, suffix = '' }) {
     return () => controls.stop();
   }, [inView, to]);
 
-  const text = decimals ? val.toFixed(decimals) : Math.round(val).toLocaleString('en-IN');
+  const text = decimals ? val.toFixed(decimals) : Math.round(val).toLocaleString(locale);
   return (
     <span ref={ref}>
       {text}
@@ -75,7 +76,8 @@ function CountUp({ to, decimals = 0, suffix = '' }) {
  * Auto-rotating deck of featured tours, spring reflow, count-up stats,
  * mouse parallax, floating stat cards. Reduced-motion safe.
  */
-export default function Hero({ brand = 'ROAMBEYOND', tagline = 'Curated travel packages across India & beyond.' }) {
+export default function Hero({ brand = 'ROAMBEYOND', tagline }) {
+  const { t } = useTranslation();
   const [q, setQ] = useState('');
   const navigate = useNavigate();
   const [items, setItems] = useState(FALLBACK_ITEMS);
@@ -184,14 +186,14 @@ export default function Hero({ brand = 'ROAMBEYOND', tagline = 'Curated travel p
             </motion.div>
 
             <h1 className="mt-5 font-display text-5xl sm:text-6xl lg:text-7xl font-semibold tracking-tight leading-[1.05] text-ink-900">
-              {HEADLINE.map((w) => (
+              {[t('hero.headline1'), t('hero.headline2'), t('hero.headline3')].map((w) => (
                 <motion.span key={w} variants={item} className="inline-block mr-[0.28em]">
                   {w}
                 </motion.span>
               ))}
               <motion.span variants={item} className="inline-block">
                 <span className="relative inline-block italic text-brand-700">
-                  ordinary.
+                  {t('hero.ordinary')}
                   <svg className="absolute -bottom-2 left-0 w-full" height="10" viewBox="0 0 300 10" preserveAspectRatio="none" aria-hidden="true">
                     <motion.path
                       d="M2 8 C 80 2, 220 2, 298 6"
@@ -209,8 +211,7 @@ export default function Hero({ brand = 'ROAMBEYOND', tagline = 'Curated travel p
             </h1>
 
             <motion.p variants={item} className="mt-5 text-base sm:text-lg text-ink-500 leading-relaxed max-w-xl">
-              {tagline} Hand-picked stays, trusted local guides, transparent pricing —
-              everything handled, so you just enjoy the journey.
+              {tagline || t('hero.subtitle')}
             </motion.p>
 
             {/* Search */}
@@ -220,9 +221,9 @@ export default function Hero({ brand = 'ROAMBEYOND', tagline = 'Curated travel p
                 <input
                   value={q}
                   onChange={(e) => setQ(e.target.value)}
-                  placeholder="Where do you want to go?"
+                  placeholder={t('hero.searchPlaceholder')}
                   className="flex-1 min-w-0 bg-transparent text-sm outline-none placeholder:text-ink-400"
-                  aria-label="Search trips"
+                  aria-label={t('hero.searchAria')}
                 />
                 <motion.button
                   type="submit"
@@ -230,7 +231,7 @@ export default function Hero({ brand = 'ROAMBEYOND', tagline = 'Curated travel p
                   whileTap={{ scale: 0.96 }}
                   className="inline-flex items-center gap-2 rounded-full bg-brand-600 hover:bg-brand-700 px-4 sm:px-5 h-10 text-sm font-semibold text-white transition-all hover:-translate-y-px shadow-soft"
                 >
-                  <span className="hidden sm:inline">Search</span>
+                  <span className="hidden sm:inline">{t('common.search')}</span>
                   <ArrowRight size={16} />
                 </motion.button>
               </div>
@@ -240,12 +241,12 @@ export default function Hero({ brand = 'ROAMBEYOND', tagline = 'Curated travel p
             <motion.div variants={item} className="mt-5 flex flex-col sm:flex-row gap-3">
               <motion.div whileHover={{ y: -2 }} whileTap={{ scale: 0.97 }}>
                 <Link to="/packages" className="btn-primary">
-                  <Compass size={16} /> Explore tours
+                  <Compass size={16} /> {t('hero.exploreTours')}
                 </Link>
               </motion.div>
               <motion.div whileHover={{ y: -2 }} whileTap={{ scale: 0.97 }}>
                 <Link to="/contact?type=custom" className="btn-secondary">
-                  Plan a custom trip
+                  {t('hero.planCustomTrip')}
                 </Link>
               </motion.div>
             </motion.div>
@@ -265,8 +266,8 @@ export default function Hero({ brand = 'ROAMBEYOND', tagline = 'Curated travel p
                   ))}
                 </div>
                 <div className="text-sm leading-tight">
-                  <p className="font-semibold text-ink-900"><CountUp to={12000} suffix="+" /> travellers</p>
-                  <p className="text-xs text-ink-500">travel with us every year</p>
+                  <p className="font-semibold text-ink-900"><CountUp to={12000} suffix="+" /> {t('hero.travellers')}</p>
+                  <p className="text-xs text-ink-500">{t('hero.travellersNote')}</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
@@ -276,11 +277,11 @@ export default function Hero({ brand = 'ROAMBEYOND', tagline = 'Curated travel p
                   ))}
                 </div>
                 <p className="text-sm text-ink-700">
-                  <strong className="text-ink-900"><CountUp to={4.9} decimals={1} />/5</strong> from 8,000+ reviews
+                  <strong className="text-ink-900"><CountUp to={4.9} decimals={1} />/5</strong> {t('hero.fromReviews')}
                 </p>
               </div>
               <div className="inline-flex items-center gap-1.5 text-sm text-ink-700">
-                <ShieldCheck size={15} className="text-brand-600" /> Verified stays & fair refunds
+                <ShieldCheck size={15} className="text-brand-600" /> {t('hero.verifiedStays')}
               </div>
             </motion.div>
           </motion.div>
@@ -305,7 +306,7 @@ export default function Hero({ brand = 'ROAMBEYOND', tagline = 'Curated travel p
                     <motion.button
                       key={c.slug}
                       type="button"
-                      aria-label={pos === 0 ? `View ${c.title}` : `Select ${c.destination}`}
+                      aria-label={pos === 0 ? t('hero.viewPackage', { title: c.title }) : t('hero.selectDestination', { destination: c.destination })}
                       aria-pressed={pos === 0}
                       onClick={() => (pos === 0 && c.slug ? navigate(`/packages/${c.slug}`) : setActive(index))}
                       animate={s}
@@ -331,7 +332,7 @@ export default function Hero({ brand = 'ROAMBEYOND', tagline = 'Curated travel p
                           <p className="font-display text-xl sm:text-2xl font-semibold leading-tight line-clamp-1">{c.title}</p>
                           {c.price > 0 && (
                             <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-white/90 backdrop-blur px-2.5 py-1 text-xs font-bold text-brand-800 shadow-soft">
-                              <Calendar size={11} /> from {formatINR(c.discountPrice || c.price)}
+                              <Calendar size={11} /> {t('common.from')} {formatINR(c.discountPrice || c.price)}
                             </span>
                           )}
                         </div>
@@ -353,7 +354,7 @@ export default function Hero({ brand = 'ROAMBEYOND', tagline = 'Curated travel p
                     </div>
                     <div className="leading-tight">
                       <p className="text-sm font-extrabold text-ink-900"><CountUp to={4.9} decimals={1} />/5</p>
-                      <p className="text-[10px] text-ink-500 font-medium">traveller rating</p>
+                      <p className="text-[10px] text-ink-500 font-medium">{t('hero.travellerRating')}</p>
                     </div>
                   </div>
                 </motion.div>
@@ -366,7 +367,7 @@ export default function Hero({ brand = 'ROAMBEYOND', tagline = 'Curated travel p
                   whileHover={{ scale: 1.05 }}
                 >
                   <p className="font-display text-xl font-semibold text-cream-200"><CountUp to={45} suffix="+" /></p>
-                  <p className="text-[10px] uppercase tracking-widest text-cream-200/80">Destinations</p>
+                  <p className="text-[10px] uppercase tracking-widest text-cream-200/80">{t('hero.destinations')}</p>
                 </motion.div>
 
                 {/* Floating card — bottom left, reflects active destination */}
@@ -388,7 +389,7 @@ export default function Hero({ brand = 'ROAMBEYOND', tagline = 'Curated travel p
                   <div className="leading-tight">
                     <p className="text-sm font-bold text-ink-900 line-clamp-1">{activeItem.title}</p>
                     <p className="text-xs text-brand-700 font-semibold">
-                      from {formatINR(activeItem.discountPrice || activeItem.price)}
+                      {t('common.from')} {formatINR(activeItem.discountPrice || activeItem.price)}
                     </p>
                   </div>
                 </motion.div>
@@ -400,7 +401,7 @@ export default function Hero({ brand = 'ROAMBEYOND', tagline = 'Curated travel p
                   <button
                     key={c.slug}
                     onClick={() => setActive(i)}
-                    aria-label={`Select ${c.destination}`}
+                    aria-label={t('hero.selectDestination', { destination: c.destination })}
                     aria-current={active === i ? 'true' : undefined}
                     className="relative h-3.5 w-3.5 rounded-full"
                   >

@@ -49,10 +49,58 @@ const getMe = asyncHandler(async (req, res) => {
                 phone: req.user.phone,
                 role: req.user.role,
                 avatar: req.user.avatar,
-                isVerified: req.user.isVerified
+                isVerified: req.user.isVerified,
+                isPhoneVerified: req.user.isPhoneVerified
             }
         },
         "User profile fetched successfully"
+    );
+
+});
+
+const sendOtp = asyncHandler(async (req, res) => {
+
+    const { phone, purpose } = req.validatedData.body;
+
+    const result = await authService.sendOtpUser(phone, purpose);
+
+    return successResponse(
+        res,
+        result,
+        result.message,
+        200
+    );
+
+});
+
+const verifyOtp = asyncHandler(async (req, res) => {
+
+    const { phone, otp, purpose } = req.validatedData.body;
+
+    const result = await authService.verifyOtpUser(phone, otp, purpose);
+
+    return successResponse(
+        res,
+        result,
+        "OTP verified successfully",
+        200
+    );
+
+});
+
+const phoneLogin = asyncHandler(async (req, res) => {
+
+    const { phone, otp } = req.validatedData.body;
+
+    const result = await authService.phoneLoginUser(phone, otp);
+
+    setAuthCookie(res, result.token);
+
+    return successResponse(
+        res,
+        result,
+        "Login successful",
+        200
     );
 
 });
@@ -175,6 +223,9 @@ module.exports = {
     register,
     login,
     getMe,
+    sendOtp,
+    verifyOtp,
+    phoneLogin,
     changePassword,
     logout,
     forgotPassword,

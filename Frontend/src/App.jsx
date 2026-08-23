@@ -1,4 +1,4 @@
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { lazy, Suspense, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 
@@ -148,24 +148,38 @@ export default function App() {
       <Route
         path="/admin"
         element={
-          <AdminRoute>
+          <AdminRoute roles={['admin', 'agent']}>
             <AdminLayout />
           </AdminRoute>
         }
       >
-        <Route index element={<AdminOverview />} />
-        <Route path="packages" element={<AdminPackages />} />
-        <Route path="blogs" element={<AdminBlogs />} />
-        <Route path="categories" element={<AdminCategories />} />
-        <Route path="users" element={<AdminUsers />} />
-        <Route path="enquiries" element={<AdminEnquiries />} />
-        <Route path="trip-requests" element={<AdminTripRequests />} />
-        <Route path="contact" element={<AdminContact />} />
-        <Route path="reviews" element={<AdminReviews />} />
-        <Route path="newsletter" element={<AdminNewsletter />} />
-        <Route path="notifications" element={<AdminNotifications />} />
-        <Route path="site-content" element={<AdminSiteContent />} />
+        <Route
+          index
+          element={
+            <RoleRedirect
+              roles={{ agent: '/admin/enquiries' }}
+              fallback={<AdminOverview />}
+            />
+          }
+        />
+        <Route path="packages" element={<AdminRoute roles={['admin']}><AdminPackages /></AdminRoute>} />
+        <Route path="blogs" element={<AdminRoute roles={['admin']}><AdminBlogs /></AdminRoute>} />
+        <Route path="categories" element={<AdminRoute roles={['admin']}><AdminCategories /></AdminRoute>} />
+        <Route path="users" element={<AdminRoute roles={['admin']}><AdminUsers /></AdminRoute>} />
+        <Route path="enquiries" element={<AdminRoute roles={['admin', 'agent']}><AdminEnquiries /></AdminRoute>} />
+        <Route path="trip-requests" element={<AdminRoute roles={['admin']}><AdminTripRequests /></AdminRoute>} />
+        <Route path="contact" element={<AdminRoute roles={['admin', 'agent']}><AdminContact /></AdminRoute>} />
+        <Route path="reviews" element={<AdminRoute roles={['admin']}><AdminReviews /></AdminRoute>} />
+        <Route path="newsletter" element={<AdminRoute roles={['admin']}><AdminNewsletter /></AdminRoute>} />
+        <Route path="notifications" element={<AdminRoute roles={['admin']}><AdminNotifications /></AdminRoute>} />
+        <Route path="site-content" element={<AdminRoute roles={['admin']}><AdminSiteContent /></AdminRoute>} />
       </Route>
     </Routes>
   );
+}
+
+function RoleRedirect({ roles, fallback }) {
+  const user = useSelector((s) => s.auth.user);
+  const target = roles[user?.role];
+  return target ? <Navigate to={target} replace /> : fallback;
 }

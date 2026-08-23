@@ -1,14 +1,17 @@
 import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Clock, Search, ArrowRight } from 'lucide-react';
 import clsx from 'clsx';
 import { blogApi, categoryApi } from '../api/endpoints';
 import ImageWithFallback from '../components/ui/ImageWithFallback';
 import Skeleton from '../components/ui/Skeleton';
+import Seo from '../components/seo/Seo';
 import { formatDate } from '../utils/format';
 import { useReveal } from '../hooks/useReveal';
 
 export default function BlogsList() {
+  const { t } = useTranslation();
   const [params, setParams] = useSearchParams();
   const [blogs, setBlogs] = useState([]);
   const [cats, setCats] = useState([]);
@@ -42,11 +45,12 @@ export default function BlogsList() {
 
   return (
     <div className="bg-cream-gradient min-h-screen">
+      <Seo title={t('blogs.title')} description={t('blogs.homeSubtitle')} path="/blogs" />
       <div className="section py-12">
         <div className="text-center max-w-2xl mx-auto">
-          <p className="eyebrow justify-center">From the journal</p>
-          <h1 className="mt-2 font-display text-4xl sm:text-5xl font-semibold tracking-tight text-ink-900">Travel stories & guides</h1>
-          <p className="mt-2.5 text-ink-500">Field notes, itineraries and practical advice from our team</p>
+          <p className="eyebrow justify-center">{t('blogs.eyebrow')}</p>
+          <h1 className="mt-2 font-display text-4xl sm:text-5xl font-semibold tracking-tight text-ink-900">{t('blogs.title')}</h1>
+          <p className="mt-2.5 text-ink-500">{t('blogs.homeSubtitle')}</p>
         </div>
 
         <div className="mt-8 max-w-2xl mx-auto flex gap-2">
@@ -55,14 +59,14 @@ export default function BlogsList() {
             <input
               value={search}
               onChange={(e) => setParam('q', e.target.value)}
-              placeholder="Search articles…"
+              placeholder={t('blogs.searchPlaceholder')}
               className="input pl-11 h-12"
             />
           </div>
         </div>
 
         <div className="mt-5 flex flex-wrap gap-2 justify-center">
-          <button onClick={() => setParam('category', '')} className={clsx('chip', !category && 'bg-brand-600 text-white')}>All</button>
+          <button onClick={() => setParam('category', '')} className={clsx('chip', !category && 'bg-brand-600 text-white')}>{t('blogs.all')}</button>
           {cats.map((c) => (
             <button key={c.name || c._id} onClick={() => setParam('category', c.name)} className={clsx('chip', category === c.name && 'bg-brand-600 text-white')}>
               {c.name}
@@ -83,7 +87,7 @@ export default function BlogsList() {
             ))}
           </div>
         ) : blogs.length === 0 ? (
-          <p className="text-center text-ink-500 py-12">No articles found. Try a different search.</p>
+          <p className="text-center text-ink-500 py-12">{t('blogs.noResults')}</p>
         ) : (
           <>
             {featured && !search && !category && (
@@ -96,7 +100,7 @@ export default function BlogsList() {
                   <h2 className="mt-3 font-display text-2xl sm:text-3xl font-semibold text-ink-900 hover:text-brand-700">{featured.title}</h2>
                   <p className="mt-3 text-ink-500 line-clamp-3">{featured.excerpt}</p>
                   <p className="mt-4 text-xs text-ink-500 inline-flex items-center gap-2"><Clock size={12} /> {formatDate(featured.publishedAt || featured.createdAt)}</p>
-                  <span className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-brand-700">Read article <ArrowRight size={14} /></span>
+                  <span className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-brand-700">{t('blogs.readArticle')} <ArrowRight size={14} /></span>
                 </div>
               </Link>
             )}

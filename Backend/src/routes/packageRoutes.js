@@ -6,6 +6,8 @@ const packageController = require("../controllers/packageController");
 const validate = require("../middlewares/validate");
 const protect = require("../middlewares/protect");
 const authorize = require("../middlewares/authorize");
+const upload = require("../middlewares/upload");
+const validateImageFile = require("../middlewares/validateImageFile");
 
 const {
     getPackagesSchema,
@@ -33,6 +35,15 @@ router.post(
     authorize("admin"),
     validate(createPackageSchema),
     packageController.createPackage
+);
+
+router.post(
+    "/upload-image",
+    protect,
+    authorize("admin"),
+    upload.single("image"),
+    validateImageFile,
+    packageController.uploadPackageImage
 );
 
 router.patch(

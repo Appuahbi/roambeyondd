@@ -2,6 +2,9 @@ const ContactRequest = require("../models/ContactRequest");
 const AppError = require("../utils/AppError");
 const escapeRegex = require("../utils/sanitizeRegex");
 const { clearDashboardCache } = require("./dashboardService");
+const { notifyUser } = require("../utils/notify");
+
+const AGENT_ROLE = "agent";
 
 const createContactRequest = async (requestData) => {
     const contactRequest = await ContactRequest.create(requestData);
@@ -9,17 +12,25 @@ const createContactRequest = async (requestData) => {
     return contactRequest;
 };
 
-const getAllContactRequests = async (query) => {
+const getAllContactRequests = async (query, user) => {
     const {
         page = 1,
         limit = 10,
         status,
         source,
+        assignedTo,
         search,
         sort = "latest"
     } = query;
 
     const filter = {};
+
+    // Agents can only ever see the requests assigned to them.
+    if (user && user.role === AGENT_ROLE) {
+        filter.assignedTo = user.id;
+    } else if (assignedTo) {
+        filter.assignedTo = assignedTo === "unassigned" ? null : assignedTo;
+    }
 
     if (status) {
         filter.status = status;
@@ -66,6 +77,7 @@ const getAllContactRequests = async (query) => {
     const skip = (pageNum - 1) * limitNum;
 
     contactRequests = contactRequests
+        .populate("assignedTo", "name email")
         .skip(skip)
         .limit(limitNum);
 
@@ -80,22 +92,38 @@ const getAllContactRequests = async (query) => {
     };
 };
 
-const getContactRequestById = async (id) => {
-    const contactRequest = await ContactRequest.findById(id);
+const getContactRequestById = async (id, user) => {
+    const contactRequest = await ContactRequest.findById(id)
+        .populate("assignedTo", "name email");
 
     if (!contactRequest) {
         throw new AppError("Contact request not found", 404);
+    }
+
+    const isAdmin = !user || user.role === "admin";
+    const isAssignedAgent = user && user.role === AGENT_ROLE &&
+        contactRequest.assignedTo && String(contactRequest.assignedTo._id) === String(user.id);
+
+    if (!isAdmin && !isAssignedAgent) {
+        throw new AppError("You are not authorized to view this contact request", 403);
     }
 
     return contactRequest;
 };
 
-const updateContactRequest = async (id, updateData) => {
+const updateContactRequest = async (id, updateData, user) => {
     const contactRequest = await ContactRequest.findById(id);
 
     if (!contactRequest) {
         throw new AppError("Contact request not found", 404);
     }
+
+    // Agents may only update the requests assigned to them.
+    if (user && user.role === AGENT_ROLE && String(contactRequest.assignedTo || "") !== String(user.id)) {
+        throw new AppError("You are not authorized to update this contact request", 403);
+    }
+
+    const previousAssignee = contactRequest.assignedTo ? String(contactRequest.assignedTo) : "";
 
     const allowedFields = [
         "status",
@@ -116,7 +144,18 @@ const updateContactRequest = async (id, updateData) => {
 
     await clearDashboardCache();
 
-    return contactRequest;
+    // Notify the newly assigned agent.
+    const newAssignee = contactRequest.assignedTo ? String(contactRequest.assignedTo) : "";
+    if (newAssignee && newAssignee !== previousAssignee) {
+        notifyUser(contactRequest.assignedTo, {
+            type: "system",
+            title: "New request assigned to you",
+            message: `A contact request from ${contactRequest.name} (${contactRequest.subject}) has been assigned to you.`,
+            data: { contactRequestId: contactRequest._id }
+        }).catch(() => {});
+    }
+
+    return contactRequest.populate("assignedTo", "name email");
 };
 
 const deleteContactRequest = async (id) => {

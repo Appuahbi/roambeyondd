@@ -138,9 +138,111 @@ const sendNewsletterEmail = async (subscriber, subject, body) => {
     });
 };
 
+/*
+|--------------------------------------------------------------------------
+| New Lead Alerts
+|--------------------------------------------------------------------------
+| Fired when a customer submits an enquiry or a trip request. Emails every
+| admin in real time so nobody has to watch the dashboard to catch a lead.
+| Errors are swallowed and logged — a mail hiccup must never fail the lead.
+|--------------------------------------------------------------------------
+*/
+
+const getLeadAlertRecipients = async () => {
+    if (process.env.LEAD_ALERT_EMAIL) {
+        return [process.env.LEAD_ALERT_EMAIL.trim()];
+    }
+    const User = require("../models/User");
+    const admins = await User.find({ role: "admin" }).select("email").lean();
+    return admins.map((a) => a.email);
+};
+
+const leadEmailShell = (title, rowsHtml) => `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; border: 1px solid #eee;">
+        <div style="background: linear-gradient(135deg, #2f7a42, #3a9e54); padding: 24px 32px; text-align: center;">
+            <h1 style="color: #ffffff; margin: 0; font-size: 20px; font-weight: 700;">Roam Beyond</h1>
+            <p style="color: #d4edda; margin: 4px 0 0; font-size: 12px; letter-spacing: 2px; text-transform: uppercase;">New Lead Alert</p>
+        </div>
+        <div style="padding: 28px 32px; color: #333; line-height: 1.7; font-size: 14px;">
+            <h2 style="color: #2f3f33; font-size: 18px; margin: 0 0 16px;">${escapeHtml(title)}</h2>
+            <table style="width: 100%; border-collapse: collapse;">
+                ${rowsHtml}
+            </table>
+            <p style="color: #888; font-size: 12px; margin-top: 24px;">This is an automated alert from the Roam Beyond platform.</p>
+        </div>
+    </div>
+`;
+
+const leadRow = (label, value) => `
+    <tr>
+        <td style="padding: 6px 12px 6px 0; color: #888; white-space: nowrap; vertical-align: top;">${escapeHtml(label)}</td>
+        <td style="padding: 6px 0; color: #333; font-weight: 600;">${escapeHtml(String(value ?? "—"))}</td>
+    </tr>
+`;
+
+const sendNewEnquiryAlert = async (enquiry) => {
+    try {
+        const admins = await getLeadAlertRecipients();
+        if (admins.length === 0) return;
+
+        const packageTitle = enquiry.tourPackage?.title || "Custom trip";
+        const subject = `New Enquiry — ${enquiry.enquiryNumber} (${packageTitle})`;
+
+        const rowsHtml = [
+            leadRow("Enquiry no.", enquiry.enquiryNumber),
+            leadRow("Customer", enquiry.customerName),
+            leadRow("Email", enquiry.customerEmail),
+            leadRow("Phone", enquiry.customerPhone),
+            leadRow("Package", packageTitle),
+            leadRow("Travel date", enquiry.travelDate ? new Date(enquiry.travelDate).toDateString() : ""),
+            leadRow("Adults / Children", `${enquiry.adults} / ${enquiry.children || 0}`),
+            leadRow("Notes", enquiry.notes || "—")
+        ].join("");
+
+        await sendEmail({
+            to: admins,
+            subject,
+            html: leadEmailShell(subject, rowsHtml)
+        });
+    } catch (err) {
+        logger.warn({ err }, "Failed to send new enquiry alert");
+    }
+};
+
+const sendNewTripRequestAlert = async (tripRequest) => {
+    try {
+        const admins = await getLeadAlertRecipients();
+        if (admins.length === 0) return;
+
+        const subject = `New Trip Request — ${tripRequest.destination}`;
+        const userName = tripRequest.userName || tripRequest.user?.name || "Customer";
+
+        const rowsHtml = [
+            leadRow("Customer", userName),
+            leadRow("Email", tripRequest.user?.email || ""),
+            leadRow("Destination", tripRequest.destination),
+            leadRow("Dates", `${new Date(tripRequest.startDate).toDateString()} → ${new Date(tripRequest.endDate).toDateString()}`),
+            leadRow("Budget", tripRequest.budget?.min ? `₹${tripRequest.budget.min} – ₹${tripRequest.budget.max}` : "—"),
+            leadRow("Group size", `${tripRequest.groupSize} (${tripRequest.adults} adults / ${tripRequest.children || 0} children)`),
+            leadRow("Preferences", (tripRequest.preferences || []).join(", ") || "—"),
+            leadRow("Special requests", tripRequest.specialRequests || "—")
+        ].join("");
+
+        await sendEmail({
+            to: admins,
+            subject,
+            html: leadEmailShell(subject, rowsHtml)
+        });
+    } catch (err) {
+        logger.warn({ err }, "Failed to send new trip request alert");
+    }
+};
+
 module.exports = {
     sendEmail,
     sendPasswordResetEmail,
     sendVerificationEmail,
-    sendNewsletterEmail
+    sendNewsletterEmail,
+    sendNewEnquiryAlert,
+    sendNewTripRequestAlert
 };

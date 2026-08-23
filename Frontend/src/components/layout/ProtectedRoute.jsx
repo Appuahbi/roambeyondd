@@ -1,7 +1,7 @@
 import { Navigate, useLocation } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 
-export default function ProtectedRoute({ children, adminOnly = false }) {
+export default function ProtectedRoute({ children, adminOnly = false, roles }) {
   const location = useLocation();
   const { user, initialized } = useSelector((s) => s.auth);
 
@@ -16,6 +16,9 @@ export default function ProtectedRoute({ children, adminOnly = false }) {
     return <Navigate to="/login" state={{ from: location.pathname + location.search }} replace />;
   }
   if (adminOnly && user?.role !== 'admin') {
+    return <Navigate to="/" replace />;
+  }
+  if (roles && !roles.includes(user?.role)) {
     return <Navigate to="/" replace />;
   }
   return children;

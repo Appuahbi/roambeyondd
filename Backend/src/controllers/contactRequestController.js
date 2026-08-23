@@ -22,7 +22,8 @@ const getAllContactRequests = asyncHandler(async (req, res) => {
 
     const result =
         await contactRequestService.getAllContactRequests(
-            req.query
+            req.query,
+            req.user
         );
 
     return successResponse(
@@ -37,7 +38,8 @@ const getContactRequestById = asyncHandler(async (req, res) => {
 
     const contactRequest =
         await contactRequestService.getContactRequestById(
-            req.validatedData.params.id
+            req.validatedData.params.id,
+            req.user
         );
 
     return successResponse(
@@ -53,7 +55,8 @@ const updateContactRequest = asyncHandler(async (req, res) => {
     const contactRequest =
         await contactRequestService.updateContactRequest(
             req.validatedData.params.id,
-            req.validatedData.body
+            req.validatedData.body,
+            req.user
         );
 
     return successResponse(

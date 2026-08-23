@@ -20,21 +20,22 @@ import { LOGO_WORDMARK } from '../../utils/branding';
 */
 
 const NAV = [
-  { to: '/admin', label: 'Overview', icon: LayoutDashboard, end: true },
-  { to: '/admin/packages', label: 'Packages', icon: Package },
-  { to: '/admin/blogs', label: 'Blogs', icon: BookOpen },
-  { to: '/admin/categories', label: 'Categories', icon: Tags },
-  { to: '/admin/users', label: 'Users', icon: Users },
-  { to: '/admin/enquiries', label: 'Enquiries', icon: FileText },
-  { to: '/admin/trip-requests', label: 'Trip requests', icon: MapIcon },
-  { to: '/admin/contact', label: 'Contact', icon: MessageSquare },
-  { to: '/admin/reviews', label: 'Reviews', icon: Star },
-  { to: '/admin/newsletter', label: 'Newsletter', icon: Mail },
-  { to: '/admin/notifications', label: 'Notifications', icon: Bell },
-  { to: '/admin/site-content', label: 'Site content', icon: ShieldCheck },
+  { to: '/admin', label: 'Overview', icon: LayoutDashboard, end: true, roles: ['admin'] },
+  { to: '/admin/packages', label: 'Packages', icon: Package, roles: ['admin'] },
+  { to: '/admin/blogs', label: 'Blogs', icon: BookOpen, roles: ['admin'] },
+  { to: '/admin/categories', label: 'Categories', icon: Tags, roles: ['admin'] },
+  { to: '/admin/users', label: 'Users', icon: Users, roles: ['admin'] },
+  { to: '/admin/enquiries', label: 'Enquiries', icon: FileText, roles: ['admin', 'agent'] },
+  { to: '/admin/trip-requests', label: 'Trip requests', icon: MapIcon, roles: ['admin'] },
+  { to: '/admin/contact', label: 'Contact', icon: MessageSquare, roles: ['admin', 'agent'] },
+  { to: '/admin/reviews', label: 'Reviews', icon: Star, roles: ['admin'] },
+  { to: '/admin/newsletter', label: 'Newsletter', icon: Mail, roles: ['admin'] },
+  { to: '/admin/notifications', label: 'Notifications', icon: Bell, roles: ['admin'] },
+  { to: '/admin/site-content', label: 'Site content', icon: ShieldCheck, roles: ['admin'] },
 ];
 
-function Sidebar({ onNavigate }) {
+function Sidebar({ onNavigate, userRole = 'admin' }) {
+  const visible = NAV.filter((item) => !item.roles || item.roles.includes(userRole));
   return (
     <aside className="h-full w-64 shrink-0 border-r border-cream-200 bg-white flex flex-col">
       <div className="px-5 py-5 border-b border-cream-100">
@@ -53,7 +54,7 @@ function Sidebar({ onNavigate }) {
         </div>
       </div>
       <nav className="flex-1 overflow-y-auto p-3 space-y-0.5">
-        {NAV.map((item) => (
+        {visible.map((item) => (
           <NavLink
             key={item.to}
             to={item.to}
@@ -101,7 +102,7 @@ export default function AdminLayout() {
     <div className="min-h-screen bg-cream-50 flex">
       {/* Desktop sidebar */}
       <div className="hidden lg:block sticky top-0 h-screen">
-        <Sidebar />
+        <Sidebar userRole={user?.role} />
       </div>
 
       {/* Mobile drawer */}
@@ -109,7 +110,7 @@ export default function AdminLayout() {
         <div className="lg:hidden fixed inset-0 z-50">
           <div className="absolute inset-0 bg-ink-900/40" onClick={() => setOpen(false)} />
           <div className="absolute left-0 top-0 h-full">
-            <Sidebar onNavigate={() => setOpen(false)} />
+            <Sidebar onNavigate={() => setOpen(false)} userRole={user?.role} />
             <button
               onClick={() => setOpen(false)}
               aria-label="Close menu"

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react';
 import clsx from 'clsx';
 import { packageApi } from '../../api/endpoints';
@@ -21,7 +22,8 @@ function usePerPage() {
   return perPage;
 }
 
-export default function FeaturedPackages({ title = 'Featured tours', eyebrow = 'Hand-picked for you', subtitle = 'Our travellers’ favourites this season', featured = true }) {
+export default function FeaturedPackages({ title, eyebrow, subtitle, featured = true }) {
+  const { t } = useTranslation();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const perPage = usePerPage();
@@ -29,6 +31,12 @@ export default function FeaturedPackages({ title = 'Featured tours', eyebrow = '
   const [animate, setAnimate] = useState(true);
   const [paused, setPaused] = useState(false);
   const touchStartX = useRef(null);
+
+  const heading = {
+    title: title || t('home.featuredTitle'),
+    eyebrow: eyebrow || t('home.featuredEyebrow'),
+    subtitle: subtitle || t('home.featuredSubtitle'),
+  };
 
   const totalPages = Math.max(1, Math.ceil(items.length / perPage));
 
@@ -99,27 +107,27 @@ export default function FeaturedPackages({ title = 'Featured tours', eyebrow = '
       <div className="section">
         <div className="flex items-end justify-between gap-4 flex-wrap">
           <SectionHeader
-            eyebrow={eyebrow}
-            title={title}
-            subtitle={subtitle}
+            eyebrow={heading.eyebrow}
+            title={heading.title}
+            subtitle={heading.subtitle}
             center={false}
           />
           <div className="flex items-center gap-2">
             <Link to="/packages" className="hidden sm:inline-flex items-center gap-1 text-sm font-semibold text-brand-700 hover:text-brand-800">
-              View all <ArrowRight size={14} />
+              {t('common.viewAll')} <ArrowRight size={14} />
             </Link>
             {totalPages > 1 && (
               <div className="hidden md:flex gap-1.5">
                 <button
                   onClick={prev}
-                  aria-label="Previous page"
+                  aria-label={t('common.previousPage')}
                   className="h-10 w-10 grid place-items-center rounded-full bg-cream-100 hover:bg-cream-200 text-ink-900"
                 >
                   <ChevronLeft size={18} />
                 </button>
                 <button
                   onClick={next}
-                  aria-label="Next page"
+                  aria-label={t('common.nextPage')}
                   className="h-10 w-10 grid place-items-center rounded-full bg-cream-100 hover:bg-cream-200 text-ink-900"
                 >
                   <ChevronRight size={18} />
@@ -140,7 +148,7 @@ export default function FeaturedPackages({ title = 'Featured tours', eyebrow = '
             ))}
           </div>
         ) : items.length === 0 ? (
-          <p className="mt-10 text-sm text-ink-500 text-center py-8">No featured tours yet — check back soon!</p>
+          <p className="mt-10 text-sm text-ink-500 text-center py-8">{t('home.noFeatured')}</p>
         ) : (
           <div
             className="relative mt-8 overflow-hidden"
@@ -171,7 +179,7 @@ export default function FeaturedPackages({ title = 'Featured tours', eyebrow = '
               <button
                 key={i}
                 onClick={() => setIndex(i)}
-                aria-label={`Go to page ${i + 1}`}
+                aria-label={t('common.goToPage', { page: i + 1 })}
                 aria-current={activePage === i ? 'true' : undefined}
                 className={clsx(
                   'h-2.5 rounded-full transition-all duration-300',
@@ -183,7 +191,7 @@ export default function FeaturedPackages({ title = 'Featured tours', eyebrow = '
         )}
 
         <div className="sm:hidden mt-6 text-center">
-          <Link to="/packages" className="btn-secondary">View all tours</Link>
+          <Link to="/packages" className="btn-secondary">{t('home.viewAllTours')}</Link>
         </div>
       </div>
     </section>

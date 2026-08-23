@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ShieldCheck, IndianRupee, HeartHandshake, Compass, Clock, Award } from 'lucide-react';
 import { SectionHeader } from './CategoriesSection';
 import { siteContentApi } from '../../api/endpoints';
@@ -18,6 +19,21 @@ const ICON_MAP = {
   'Top-rated': Award,
 };
 
+const WHY_KEY = {
+  'Verified stays': 'verified',
+  'Verified Stays': 'verified',
+  'Transparent pricing': 'transparent',
+  'Best Price Guarantee': 'transparent',
+  '24/7 on-trip support': 'support',
+  '24/7 Support': 'support',
+  'Local experts': 'experts',
+  'Local Expert Guides': 'experts',
+  'Flexible bookings': 'flexible',
+  'Easy Cancellation': 'flexible',
+  'Top-rated': 'toprated',
+  'Secure Payments': 'toprated',
+};
+
 const FALLBACK = [
   { icon: ShieldCheck, title: 'Verified stays', text: 'Every hotel and homestay personally inspected by our team.' },
   { icon: IndianRupee, title: 'Transparent pricing', text: 'No hidden fees — what you see is what you pay.' },
@@ -28,6 +44,7 @@ const FALLBACK = [
 ];
 
 export default function WhyChooseUs() {
+  const { t } = useTranslation();
   const [points, setPoints] = useState(FALLBACK);
 
   useEffect(() => {
@@ -45,24 +62,33 @@ export default function WhyChooseUs() {
       .catch(() => {});
   }, []);
 
+  const localize = (p) => {
+    const k = WHY_KEY[p.title];
+    if (!k) return p;
+    return { ...p, title: t(`whyUs.${k}.title`), text: t(`whyUs.${k}.text`) };
+  };
+
   return (
     <section className="py-16 sm:py-20">
       <div className="section">
         <SectionHeader
-          eyebrow="Why Roam Beyond"
-          title="The Roam Beyond difference"
-          subtitle="Six small things that make a big difference on the road."
+          eyebrow={t('whyUs.eyebrow')}
+          title={t('whyUs.title')}
+          subtitle={t('whyUs.subtitle')}
         />
         <div className="mt-10 grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {points.map((p) => (
-            <div key={p.title} className="card p-6 hover:border-brand-200 transition">
-              <div className="grid h-12 w-12 place-items-center rounded-2xl bg-brand-50 text-brand-700">
-                <p.icon size={22} />
+          {points.map((p) => {
+            const loc = localize(p);
+            return (
+              <div key={p.title} className="card p-6 hover:border-brand-200 transition">
+                <div className="grid h-12 w-12 place-items-center rounded-2xl bg-brand-50 text-brand-700">
+                  <p.icon size={22} />
+                </div>
+                <h3 className="mt-4 font-display text-lg font-semibold text-ink-900">{loc.title}</h3>
+                <p className="mt-1 text-sm text-ink-500">{loc.text}</p>
               </div>
-              <h3 className="mt-4 font-display text-lg font-semibold text-ink-900">{p.title}</h3>
-              <p className="mt-1 text-sm text-ink-500">{p.text}</p>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </section>

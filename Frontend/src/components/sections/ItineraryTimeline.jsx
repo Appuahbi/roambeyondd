@@ -1,8 +1,10 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import clsx from 'clsx';
 import { CheckCircle2, MapPin } from 'lucide-react';
 
 export default function ItineraryTimeline({ days = [], included = [] }) {
+  const { t } = useTranslation();
   const [active, setActive] = useState(0);
   if (!days.length) return null;
   return (
@@ -37,7 +39,7 @@ export default function ItineraryTimeline({ days = [], included = [] }) {
       </ol>
       <div className="lg:col-span-7 card p-6">
         <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-brand-700">
-          <MapPin size={12} /> Day {days[active]?.day}
+          <MapPin size={12} /> {t('package.dayLabel', { day: days[active]?.day })}
         </div>
         <h3 className="mt-2 font-display text-2xl font-semibold text-ink-900">{days[active]?.title}</h3>
         <p className="mt-3 text-ink-700 leading-relaxed">{days[active]?.description}</p>

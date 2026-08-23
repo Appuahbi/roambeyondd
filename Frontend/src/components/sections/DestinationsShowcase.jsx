@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { ArrowRight } from 'lucide-react';
 import clsx from 'clsx';
 import { destinationApi } from '../../api/endpoints';
@@ -8,6 +9,7 @@ import { useReveal } from '../../hooks/useReveal';
 import DestinationCard from './DestinationCard';
 
 export default function DestinationsShowcase() {
+  const { t } = useTranslation();
   const [dests, setDests] = useState([]);
   const [ref, shown] = useReveal();
 
@@ -29,9 +31,9 @@ export default function DestinationsShowcase() {
       <div className="section">
         <div className="mb-12">
           <SectionHeader
-            eyebrow="Top Destinations"
-            title="Dream Escapes Across India"
-            subtitle="Hand-picked spots for your next adventure. Pick a location, and we’ll handle the rest."
+            eyebrow={t('destinations.eyebrow')}
+            title={t('destinations.homeTitle')}
+            subtitle={t('destinations.homeSubtitle')}
             center={false}
           />
         </div>
@@ -55,13 +57,13 @@ export default function DestinationsShowcase() {
             ))}
           </div>
         ) : (
-          <p className="text-sm text-ink-500 text-center py-10">Destinations loading…</p>
+          <p className="text-sm text-ink-500 text-center py-10">{t('common.loading')}</p>
         )}
 
         {dests.length > 0 && (
           <div className="mt-10 text-center">
             <Link to="/destinations" className="btn-secondary">
-              View all destinations <ArrowRight size={15} />
+              {t('destinations.viewAll')} <ArrowRight size={15} />
             </Link>
           </div>
         )}

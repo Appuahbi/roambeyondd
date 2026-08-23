@@ -38,6 +38,18 @@ export const registerThunk = createAsyncThunk(
   }
 );
 
+export const phoneLoginThunk = createAsyncThunk(
+  'auth/phoneLogin',
+  async (payload, { rejectWithValue }) => {
+    try {
+      const res = await authApi.phoneLogin(payload);
+      return res.data;
+    } catch (e) {
+      return rejectWithValue(e.message);
+    }
+  }
+);
+
 export const fetchMeThunk = createAsyncThunk(
   'auth/me',
   async (_, { rejectWithValue }) => {
@@ -75,6 +87,13 @@ const authSlice = createSlice({
         s.token = a.payload.token;
       })
       .addCase(loginThunk.rejected, (s) => { s.loading = false; })
+      .addCase(phoneLoginThunk.pending, (s) => { s.loading = true; })
+      .addCase(phoneLoginThunk.fulfilled, (s, a) => {
+        s.loading = false;
+        s.user = a.payload.user;
+        s.token = a.payload.token;
+      })
+      .addCase(phoneLoginThunk.rejected, (s) => { s.loading = false; })
       .addCase(registerThunk.fulfilled, (s, a) => {
         s.user = a.payload.user;
         s.token = a.payload.token;

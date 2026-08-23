@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Compass, Mountain, Users, Heart, Briefcase, ArrowRight } from 'lucide-react';
 import clsx from 'clsx';
 import { categoryApi } from '../../api/endpoints';
 import { useReveal } from '../../hooks/useReveal';
+import { CAT_KEY } from '../../utils/categories';
 
 const FALLBACK = [
   {
@@ -52,6 +54,7 @@ const ICON_MAP = {
 };
 
 export default function CategoriesSection() {
+  const { t } = useTranslation();
   const [cats, setCats] = useState(FALLBACK);
   const [ref, shown] = useReveal();
 
@@ -72,6 +75,17 @@ export default function CategoriesSection() {
       .catch(() => {});
   }, []);
 
+  const localize = (c) => {
+    const k = CAT_KEY[c.name];
+    if (!k) return c;
+    return {
+      ...c,
+      name: t(`categories.${k}.name`),
+      description: t(`categories.${k}.description`),
+      highlights: [t(`categories.${k}.h1`), t(`categories.${k}.h2`)],
+    };
+  };
+
   return (
     <section ref={ref} className="py-20 sm:py-24 bg-cream-gradient relative overflow-hidden">
       {/* Decorative background blur */}
@@ -80,14 +94,15 @@ export default function CategoriesSection() {
 
       <div className="section relative">
         <SectionHeader
-          eyebrow="Curated Travel Styles"
-          title="Find a Journey Built For You"
-          subtitle="Whether you crave peaceful retreats or thrilling mountain summits, we have the ideal travel style."
+          eyebrow={t('categories.eyebrow')}
+          title={t('categories.title')}
+          subtitle={t('categories.subtitle')}
         />
 
         <div className="mt-12 grid sm:grid-cols-2 lg:grid-cols-5 gap-5">
           {cats.map((c, i) => {
             const Icon = c.icon || ICON_MAP[c.name] || Compass;
+            const loc = localize(c);
             return (
               <Link
                 key={c.name}
@@ -106,17 +121,17 @@ export default function CategoriesSection() {
                   </div>
 
                   <h3 className="mt-5 font-display text-lg font-bold text-ink-900 group-hover:text-brand-800 transition-colors">
-                    {c.name}
+                    {loc.name}
                   </h3>
 
                   <p className="mt-2 text-xs text-ink-500 leading-relaxed line-clamp-3">
-                    {c.description}
+                    {loc.description}
                   </p>
                 </div>
 
                 <div className="relative z-10 mt-6 pt-4 border-t border-cream-100">
                   <div className="flex flex-wrap gap-1.5 mb-3">
-                    {(c.highlights || []).slice(0, 2).map((h) => (
+                    {(loc.highlights || []).slice(0, 2).map((h) => (
                       <span key={h} className="chip bg-cream-50 border border-cream-200/80 text-[11px]">
                         {h}
                       </span>
@@ -124,7 +139,7 @@ export default function CategoriesSection() {
                   </div>
 
                   <span className="inline-flex items-center gap-1.5 text-xs font-bold text-brand-700 group-hover:text-brand-900 group-hover:translate-x-1 transition-all">
-                    Browse Packages <ArrowRight size={14} />
+                    {t('categories.browse')} <ArrowRight size={14} />
                   </span>
                 </div>
               </Link>

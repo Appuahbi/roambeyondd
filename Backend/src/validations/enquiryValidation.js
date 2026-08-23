@@ -7,16 +7,15 @@ const createEnquirySchema = z.object({
         customerName: z.string()
             .trim()
             .min(1, "Name is required")
-            .optional(),
+            .max(100, "Name cannot exceed 100 characters"),
 
         customerEmail: z.string()
             .trim()
-            .email("Please enter a valid email")
-            .optional(),
+            .email("Please enter a valid email"),
 
         customerPhone: z.string()
             .trim()
-            .optional(),
+            .regex(/^[6-9]\d{9}$/, "Please enter a valid Indian mobile number"),
 
         tourPackage: z
             .string()
@@ -92,7 +91,12 @@ const updateEnquiryAdminSchema = z.object({
                 message: "Please enter a valid date"
             }),
 
-        remarks: z.string().max(1000).optional()
+        remarks: z.string().max(1000).optional(),
+
+        assignedTo: z.string()
+            .regex(/^[0-9a-fA-F]{24}$/, "Invalid user ID")
+            .optional()
+            .nullable()
 
     }).refine(
         (obj) => Object.keys(obj).length > 0,

@@ -23,14 +23,14 @@ router.get(
 router.get(
     "/enquiries",
     protect,
-    authorize("admin"),
+    authorize("admin", "agent"),
     enquiryController.getAllEnquiries
 );
 
 router.patch(
     "/enquiries/:id",
     protect,
-    authorize("admin"),
+    authorize("admin", "agent"),
     validate(updateEnquiryAdminSchema),
     enquiryController.updateEnquiry
 );

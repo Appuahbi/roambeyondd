@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { useTranslation } from 'react-i18next';
 import { Bell, Check } from 'lucide-react';
 import clsx from 'clsx';
 import {
@@ -10,8 +11,10 @@ import {
 import { notificationApi } from '../api/endpoints';
 import { timeAgo } from '../utils/format';
 import Skeleton from '../components/ui/Skeleton';
+import Seo from '../components/seo/Seo';
 
 export default function Notifications() {
+  const { t } = useTranslation();
   const dispatch = useDispatch();
   const { items, unread, loading } = useSelector((s) => s.notifications);
 
@@ -26,16 +29,17 @@ export default function Notifications() {
 
   return (
     <div className="bg-cream-gradient min-h-screen">
+      <Seo title={t('notifications.title')} path="/notifications" noindex />
       <div className="section py-6 sm:py-10">
         <div className="flex items-end justify-between flex-wrap gap-3">
           <div>
-            <p className="eyebrow">Inbox</p>
-            <h1 className="mt-2 font-display text-2xl sm:text-3xl lg:text-4xl font-semibold tracking-tight text-ink-900">Notifications</h1>
-            <p className="mt-1.5 text-sm text-ink-500">{unread} unread</p>
+            <p className="eyebrow">{t('notifications.eyebrow')}</p>
+            <h1 className="mt-2 font-display text-2xl sm:text-3xl lg:text-4xl font-semibold tracking-tight text-ink-900">{t('notifications.title')}</h1>
+            <p className="mt-1.5 text-sm text-ink-500">{t('notifications.unread', { count: unread })}</p>
           </div>
           {unread > 0 && (
             <button onClick={() => dispatch(readAllThunk())} className="btn-secondary whitespace-nowrap">
-              <Check size={14} /> Mark all read
+              <Check size={14} /> {t('notifications.markAllRead')}
             </button>
           )}
         </div>
@@ -49,8 +53,8 @@ export default function Notifications() {
             <div className="mx-auto grid place-items-center h-16 w-16 rounded-full bg-cream-100 text-brand-700">
               <Bell size={28} />
             </div>
-            <h2 className="mt-4 font-display text-xl font-semibold">You’re all caught up</h2>
-            <p className="mt-1 text-sm text-ink-500">We’ll let you know when something new comes in.</p>
+            <h2 className="mt-4 font-display text-xl font-semibold">{t('notifications.emptyTitle')}</h2>
+            <p className="mt-1 text-sm text-ink-500">{t('notifications.emptyText')}</p>
           </div>
         ) : (
           <ul className="space-y-2">

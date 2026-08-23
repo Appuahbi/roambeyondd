@@ -1,11 +1,13 @@
 import { useDispatch, useSelector } from 'react-redux';
 import { Heart as HeartIcon } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 import clsx from 'clsx';
 import { toggleWishlistThunk } from '../../store/wishlistSlice';
 
 export default function Heart({ packageId, className, size = 18, withPing = true }) {
+  const { t } = useTranslation();
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
@@ -16,19 +18,19 @@ export default function Heart({ packageId, className, size = 18, withPing = true
     e.preventDefault();
     e.stopPropagation();
     if (!user) {
-      toast.error('Please sign in to save trips');
+      toast.error(t('wishlist.signInRequired'));
       navigate('/login', { state: { from: location.pathname } });
       return;
     }
     const action = await dispatch(toggleWishlistThunk(packageId));
-    if (action.payload?.action === 'added') toast.success('Saved to wishlist');
-    else if (action.payload?.action === 'removed') toast.success('Removed from wishlist');
+    if (action.payload?.action === 'added') toast.success(t('wishlist.added'));
+    else if (action.payload?.action === 'removed') toast.success(t('wishlist.removed'));
   };
 
   return (
     <button
       onClick={onClick}
-      aria-label={liked ? 'Remove from wishlist' : 'Add to wishlist'}
+      aria-label={liked ? t('wishlist.removeAria') : t('wishlist.addAria')}
       className={clsx(
         'group/heart relative inline-flex items-center justify-center rounded-full bg-white/90 backdrop-blur p-2 shadow-soft hover:scale-110 active:scale-95 transition',
         className

@@ -8,6 +8,9 @@ const User = require("../models/User");
 
 jest.mock("../services/emailService");
 const emailService = require("../services/emailService");
+
+jest.mock("../services/smsService");
+const smsService = require("../services/smsService");
 const { redisClient } = require("../config/redis");
 
 let mongoServer;
@@ -47,6 +50,10 @@ beforeEach(async () => {
 
     emailService.sendVerificationEmail.mockClear();
     emailService.sendPasswordResetEmail.mockClear();
+
+    smsService.sendOtp.mockResolvedValue({ maskedPhone: "+91****3210" });
+    smsService.verifyOtp.mockResolvedValue(true);
+    smsService.sendSms.mockResolvedValue(true);
 });
 
 describe("POST /api/auth/register", () => {
@@ -57,7 +64,8 @@ describe("POST /api/auth/register", () => {
                 name: "Test User",
                 email: "test@example.com",
                 phone: "9876543210",
-                password: "Password1"
+                password: "Password1",
+                otp: "123456"
             });
 
         expect(res.status).toBe(201);
@@ -74,7 +82,8 @@ describe("POST /api/auth/register", () => {
                 name: "Test User",
                 email: "test@example.com",
                 phone: "9876543210",
-                password: "Password1"
+                password: "Password1",
+                otp: "123456"
             });
 
         const res = await request(app)
@@ -83,7 +92,8 @@ describe("POST /api/auth/register", () => {
                 name: "Test User 2",
                 email: "test@example.com",
                 phone: "9876543211",
-                password: "Password1"
+                password: "Password1",
+                otp: "123456"
             });
 
         expect(res.status).toBe(409);
@@ -96,7 +106,8 @@ describe("POST /api/auth/register", () => {
                 name: "Test User",
                 email: "invalid-email",
                 phone: "9876543210",
-                password: "Password1"
+                password: "Password1",
+                otp: "123456"
             });
 
         expect(res.status).toBe(400);
@@ -109,7 +120,8 @@ describe("POST /api/auth/register", () => {
                 name: "Test User",
                 email: "test@example.com",
                 phone: "9876543210",
-                password: "weak"
+                password: "weak",
+                otp: "123456"
             });
 
         expect(res.status).toBe(400);
@@ -122,10 +134,47 @@ describe("POST /api/auth/register", () => {
                 name: "Test User",
                 email: "test@example.com",
                 phone: "12345",
-                password: "Password1"
+                password: "Password1",
+                otp: "123456"
             });
 
         expect(res.status).toBe(400);
+    });
+
+    it("should return 400 for missing/invalid OTP", async () => {
+        const res = await request(app)
+            .post("/api/auth/register")
+            .send({
+                name: "Test User",
+                email: "test@example.com",
+                phone: "9876543210",
+                password: "Password1",
+                otp: "12ab"
+            });
+
+        expect(res.status).toBe(400);
+    });
+
+    it("should not create a user when OTP verification fails", async () => {
+        smsService.verifyOtp.mockRejectedValueOnce(
+            Object.assign(
+                new Error("Invalid or expired OTP. Please request a new one."),
+                { statusCode: 400, isOperational: true }
+            )
+        );
+
+        const res = await request(app)
+            .post("/api/auth/register")
+            .send({
+                name: "Test User",
+                email: "otpfail@example.com",
+                phone: "9876543215",
+                password: "Password1",
+                otp: "654321"
+            });
+
+        expect(res.status).toBe(400);
+        expect(await User.findOne({ email: "otpfail@example.com" })).toBeNull();
     });
 });
 
@@ -137,7 +186,8 @@ describe("POST /api/auth/login", () => {
                 name: "Test User",
                 email: "test@example.com",
                 phone: "9876543210",
-                password: "Password1"
+                password: "Password1",
+                otp: "123456"
             });
     });
 
@@ -174,6 +224,139 @@ describe("POST /api/auth/login", () => {
             });
 
         expect(res.status).toBe(401);
+    });
+});
+
+describe("POST /api/auth/otp/send", () => {
+    it("should send an OTP for register purpose", async () => {
+        const res = await request(app)
+            .post("/api/auth/otp/send")
+            .send({ phone: "9876543210", purpose: "register" });
+
+        expect(res.status).toBe(200);
+        expect(res.body.success).toBe(true);
+        expect(smsService.sendOtp).toHaveBeenCalledWith("9876543210", "register");
+    });
+
+    it("should return 409 when phone already registered", async () => {
+        await createTestUser({ phone: "9876543222" });
+
+        const res = await request(app)
+            .post("/api/auth/otp/send")
+            .send({ phone: "9876543222", purpose: "register" });
+
+        expect(res.status).toBe(409);
+    });
+
+    it("should return 404 when no account exists for login purpose", async () => {
+        const res = await request(app)
+            .post("/api/auth/otp/send")
+            .send({ phone: "9876543223", purpose: "login" });
+
+        expect(res.status).toBe(404);
+    });
+
+    it("should return 400 for invalid purpose", async () => {
+        const res = await request(app)
+            .post("/api/auth/otp/send")
+            .send({ phone: "9876543210", purpose: "banana" });
+
+        expect(res.status).toBe(400);
+    });
+});
+
+describe("POST /api/auth/phone-login", () => {
+    it("should log in with a valid phone + OTP", async () => {
+        await createTestUser({ phone: "9876543300" });
+
+        const res = await request(app)
+            .post("/api/auth/phone-login")
+            .send({ phone: "9876543300", otp: "123456" });
+
+        expect(res.status).toBe(200);
+        expect(res.body.success).toBe(true);
+        expect(res.body.data.token).toBeDefined();
+        expect(res.body.data.user.phone).toBe("9876543300");
+        expect(smsService.verifyOtp).toHaveBeenCalledWith("9876543300", "login", "123456");
+    });
+
+    it("should return 400 when OTP is invalid", async () => {
+        await createTestUser({ phone: "9876543301" });
+
+        smsService.verifyOtp.mockRejectedValueOnce(
+            Object.assign(
+                new Error("Invalid or expired OTP. Please request a new one."),
+                { statusCode: 400, isOperational: true }
+            )
+        );
+
+        const res = await request(app)
+            .post("/api/auth/phone-login")
+            .send({ phone: "9876543301", otp: "000000" });
+
+        expect(res.status).toBe(400);
+    });
+
+    it("should return 400 for invalid OTP format", async () => {
+        const res = await request(app)
+            .post("/api/auth/phone-login")
+            .send({ phone: "9876543301", otp: "12ab" });
+
+        expect(res.status).toBe(400);
+    });
+});
+
+describe("POST /api/auth/otp/verify (SMS password reset)", () => {
+    it("should return a reset token for a valid OTP", async () => {
+        await createTestUser({ phone: "9876543400" });
+
+        const res = await request(app)
+            .post("/api/auth/otp/verify")
+            .send({ phone: "9876543400", otp: "123456", purpose: "reset" });
+
+        expect(res.status).toBe(200);
+        expect(res.body.data.token).toBeDefined();
+        expect(smsService.verifyOtp).toHaveBeenCalledWith("9876543400", "reset", "123456");
+    });
+
+    it("should complete an SMS-based password reset", async () => {
+        const user = await createTestUser({ phone: "9876543401" });
+
+        const verifyRes = await request(app)
+            .post("/api/auth/otp/verify")
+            .send({ phone: "9876543401", otp: "123456", purpose: "reset" });
+
+        expect(verifyRes.status).toBe(200);
+        const resetToken = verifyRes.body.data.token;
+
+        const resetRes = await request(app)
+            .post("/api/auth/reset-password")
+            .send({ token: resetToken, newPassword: "NewPassword1" });
+
+        expect(resetRes.status).toBe(200);
+
+        // New password should now work for the user's email
+        const login = await request(app)
+            .post("/api/auth/login")
+            .send({ email: user.email, password: "NewPassword1" });
+
+        expect(login.status).toBe(200);
+    });
+
+    it("should return 404 when phone has no account", async () => {
+        const res = await request(app)
+            .post("/api/auth/otp/verify")
+            .send({ phone: "9876543402", otp: "123456", purpose: "reset" });
+
+        expect(res.status).toBe(404);
+    });
+
+    it("should return 400 for invalid purpose", async () => {
+        const res = await request(app)
+            .post("/api/auth/otp/verify")
+            .send({ phone: "9876543400", otp: "123456", purpose: "register" });
+
+        expect(res.status).toBe(400);
     });
 });
 
@@ -361,7 +544,8 @@ describe("GET /api/auth/verify-email", () => {
                 name: "Verify User",
                 email: "verify@example.com",
                 phone: "9876543211",
-                password: "Password1"
+                password: "Password1",
+                otp: "123456"
             });
 
         const rawToken = emailService.sendVerificationEmail.mock.calls[0][1];

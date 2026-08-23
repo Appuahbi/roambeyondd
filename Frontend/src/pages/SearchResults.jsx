@@ -1,13 +1,16 @@
 import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Search } from 'lucide-react';
 import { searchApi } from '../api/endpoints';
 import PackageCard from '../components/sections/PackageCard';
 import ImageWithFallback from '../components/ui/ImageWithFallback';
 import Skeleton from '../components/ui/Skeleton';
+import Seo from '../components/seo/Seo';
 import { formatDate } from '../utils/format';
 
 export default function SearchResults() {
+  const { t } = useTranslation();
   const [params, setParams] = useSearchParams();
   const [data, setData] = useState({ packages: [], blogs: [] });
   const [loading, setLoading] = useState(true);
@@ -23,10 +26,11 @@ export default function SearchResults() {
 
   return (
     <div className="bg-cream-gradient min-h-screen">
+      <Seo title={q ? t('search.resultsFor', { q }) : t('search.title')} description={t('search.title')} path="/search" noindex />
       <div className="section py-10">
-        <p className="eyebrow">Search</p>
+        <p className="eyebrow">{t('search.eyebrow')}</p>
         <h1 className="mt-2 font-display text-3xl sm:text-4xl font-semibold tracking-tight text-ink-900">
-          {q ? `Results for “${q}”` : 'Find your next trip'}
+          {q ? t('search.resultsFor', { q }) : t('search.title')}
         </h1>
         <div className="mt-4 max-w-xl">
           <div className="relative">
@@ -35,7 +39,7 @@ export default function SearchResults() {
               value={q}
               onChange={(e) => setParams({ q: e.target.value }, { replace: true })}
               className="input pl-11 h-12"
-              placeholder="Search packages, destinations, blogs…"
+              placeholder={t('search.placeholder')}
               autoFocus
             />
           </div>
@@ -54,14 +58,14 @@ export default function SearchResults() {
           </div>
         ) : (
           <>
-            <Section title={`Tours (${data.packages?.length || 0})`}>
+            <Section title={t('search.toursCount', { count: data.packages?.length || 0 })}>
               {data.packages?.length ? (
                 <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
                   {data.packages.map((p) => <PackageCard key={p._id} pkg={p} />)}
                 </div>
-              ) : <Empty label="No tours match your search." />}
+              ) : <Empty label={t('search.noTours')} />}
             </Section>
-            <Section title={`Blog posts (${data.blogs?.length || 0})`}>
+            <Section title={t('search.blogsCount', { count: data.blogs?.length || 0 })}>
               {data.blogs?.length ? (
                 <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
                   {data.blogs.map((b) => (
@@ -77,7 +81,7 @@ export default function SearchResults() {
                     </Link>
                   ))}
                 </div>
-              ) : <Empty label="No blog posts match." />}
+              ) : <Empty label={t('search.noBlogs')} />}
             </Section>
           </>
         )}

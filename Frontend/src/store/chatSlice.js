@@ -1,4 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import i18n from '../i18n';
 import { chatApi } from '../api/endpoints';
 
 export const sendMessageThunk = createAsyncThunk(
@@ -49,12 +50,12 @@ const chatSlice = createSlice({
         if (a.payload?.reply) {
           s.messages.push({ role: 'assistant', content: a.payload.reply });
         } else {
-          s.messages.push({ role: 'error', content: 'No response received. Please try again.' });
+          s.messages.push({ role: 'error', content: i18n.t('chat.noResponse') });
         }
       })
       .addCase(sendMessageThunk.rejected, (s, a) => {
         s.sending = false;
-        s.messages.push({ role: 'error', content: a.payload || 'Something went wrong.' });
+        s.messages.push({ role: 'error', content: a.payload || i18n.t('chat.somethingWrong') });
       });
   },
 });

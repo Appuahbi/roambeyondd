@@ -50,7 +50,7 @@ router.get(
 
     protect,
 
-    authorize("admin"),
+    authorize("admin", "agent"),
 
     contactRequestController.getAllContactRequests
 
@@ -62,7 +62,7 @@ router.get(
 
     protect,
 
-    authorize("admin"),
+    authorize("admin", "agent"),
 
     validate(getContactRequestByIdSchema),
 
@@ -76,7 +76,7 @@ router.patch(
 
     protect,
 
-    authorize("admin"),
+    authorize("admin", "agent"),
 
     validate(updateContactRequestSchema),
 

@@ -15,7 +15,7 @@ const enquirySchema = new mongoose.Schema(
         user: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "User",
-            required: true
+            default: null
         },
         customerName: {
             type: String,
@@ -103,6 +103,11 @@ const enquirySchema = new mongoose.Schema(
             type: String,
             trim: true,
             default: ""
+        },
+        assignedTo: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "User",
+            default: null
         }
     },
     {
@@ -114,6 +119,7 @@ const enquirySchema = new mongoose.Schema(
 enquirySchema.index({ leadStatus: 1 });
 enquirySchema.index({ leadSource: 1 });
 enquirySchema.index({ priority: 1 });
+enquirySchema.index({ assignedTo: 1 });
 enquirySchema.index({ user: 1, createdAt: -1 });
 enquirySchema.index({ createdAt: -1 });
 

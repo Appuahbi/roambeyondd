@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link, useSearchParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   Clock, Users, MapPin, Check, X, ChevronDown, ChevronRight, ChevronLeft,
   Share2, Tag, Calendar, BadgePercent, Send, Eye, Star as StarIcon,
@@ -14,12 +15,15 @@ import Skeleton from '../components/ui/Skeleton';
 import ItineraryTimeline from '../components/sections/ItineraryTimeline';
 import PackageEnquiryForm from '../components/sections/PackageEnquiryForm';
 import PackageCard from '../components/sections/PackageCard';
+import Seo from '../components/seo/Seo';
+import { SITE_URL } from '../utils/branding';
 import { formatINR, discountPercent, timeAgo } from '../utils/format';
 import { galleryFor } from '../utils/images';
 import { useReveal } from '../hooks/useReveal';
 import toast from 'react-hot-toast';
 
 export default function PackageDetail() {
+  const { t } = useTranslation();
   const { slug } = useParams();
   const [searchParams] = useSearchParams();
   const preview = searchParams.get('preview') === 'true';
@@ -61,9 +65,9 @@ export default function PackageDetail() {
   if (!pkg) {
     return (
       <div className="section py-20 text-center">
-        <h1 className="font-display text-3xl">Tour not found</h1>
-        <p className="text-ink-500 mt-2">It may have been removed or the link is incorrect.</p>
-        <Link to="/packages" className="btn-primary mt-5 inline-flex">Browse tours</Link>
+        <h1 className="font-display text-3xl">{t('package.notFoundTitle')}</h1>
+        <p className="text-ink-500 mt-2">{t('package.notFoundText')}</p>
+        <Link to="/packages" className="btn-primary mt-5 inline-flex">{t('package.browseTours')}</Link>
       </div>
     );
   }
@@ -83,26 +87,71 @@ export default function PackageDetail() {
       try { await navigator.share({ title: pkg.title, url: window.location.href }); } catch { /* share aborted */ }
     } else {
       navigator.clipboard.writeText(window.location.href);
-      toast.success('Link copied!');
+      toast.success(t('package.linkCopied'));
     }
   };
 
   const tabs = [
-    { key: 'itinerary', label: 'Itinerary', count: pkg.itinerary?.length || 0 },
-    { key: 'inclusions', label: "What's included", count: pkg.included?.length || 0 },
-    { key: 'gallery', label: 'Photos', count: gallery.length },
-    { key: 'reviews', label: 'Reviews', count: reviews.length },
-    { key: 'faq', label: 'FAQs', count: pkg.faq?.length || 0 },
+    { key: 'itinerary', label: t('package.tabItinerary'), count: pkg.itinerary?.length || 0 },
+    { key: 'inclusions', label: t('package.tabIncluded'), count: pkg.included?.length || 0 },
+    { key: 'gallery', label: t('package.tabGallery'), count: gallery.length },
+    { key: 'reviews', label: t('package.tabReviews'), count: reviews.length },
+    { key: 'faq', label: t('package.tabFaq'), count: pkg.faq?.length || 0 },
   ];
+
+  const seoJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'TouristTrip',
+    name: pkg.title,
+    description: pkg.shortDescription || pkg.description,
+    url: `${SITE_URL.replace(/\/$/, '')}/packages/${pkg.slug}`,
+    image: gallery[0],
+    provider: {
+      '@type': 'TravelAgency',
+      name: 'RoamBeyond',
+      url: SITE_URL.replace(/\/$/, ''),
+    },
+    offers: {
+      '@type': 'Offer',
+      price: String(displayPrice),
+      priceCurrency: 'INR',
+      availability: 'https://schema.org/InStock',
+    },
+    ...(pkg.itinerary?.length ? {
+      itinerary: pkg.itinerary.map((d, i) => ({
+        '@type': 'Itinerary',
+        position: i + 1,
+        name: d.title,
+        description: d.description,
+      })),
+    } : {}),
+  };
+  const faqJsonLd = pkg.faq?.length ? {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: pkg.faq.map((f) => ({
+      '@type': 'Question',
+      name: f.question,
+      acceptedAnswer: { '@type': 'Answer', text: f.answer },
+    })),
+  } : null;
 
   return (
     <div>
+      <Seo
+        title={pkg.title}
+        description={pkg.shortDescription || pkg.description}
+        path={`/packages/${pkg.slug}`}
+        ogType="product"
+        ogImage={gallery[0]}
+        jsonLd={faqJsonLd ? [seoJsonLd, faqJsonLd] : seoJsonLd}
+      />
       {/* Admin preview notice */}
       {preview && (
         <div className="bg-brand-700 text-white">
           <div className="section py-2.5 flex items-center gap-2 text-sm">
             <Eye size={15} />
-            <span><strong>Admin preview.</strong> Hidden tours are only visible to you right now.</span>
+            <span><strong>{t('package.adminPreviewTitle')}</strong> {t('package.adminPreviewText')}</span>
           </div>
         </div>
       )}
@@ -111,8 +160,8 @@ export default function PackageDetail() {
       <section className="bg-cream-gradient">
         <div className="section pt-6 pb-8">
           <nav className="breadcrumb">
-            <Link to="/">Home</Link> <ChevronRight size={12} />
-            <Link to="/packages">Tours</Link> <ChevronRight size={12} />
+            <Link to="/">{t('nav.home')}</Link> <ChevronRight size={12} />
+            <Link to="/packages">{t('nav.tours')}</Link> <ChevronRight size={12} />
             <span className="text-ink-700 line-clamp-1">{pkg.title}</span>
           </nav>
 
@@ -121,7 +170,7 @@ export default function PackageDetail() {
             <div
               role="button"
               tabIndex={0}
-              aria-label="View all photos"
+              aria-label={t('package.viewAllPhotos')}
               onClick={() => gallery.length > 1 && setLightbox(0)}
               onKeyDown={(e) => {
                 if ((e.key === 'Enter' || e.key === ' ') && gallery.length > 1) {
@@ -139,18 +188,18 @@ export default function PackageDetail() {
               <div className="absolute top-4 left-4 flex gap-2">
                 {off > 0 && (
                   <span className="chip bg-rose-600 text-white !border-transparent">
-                    <BadgePercent size={12} /> {off}% off
+                    <BadgePercent size={12} /> {off}% {t('package.off')}
                   </span>
                 )}
                 <span className="chip bg-white/90 text-brand-800">{pkg.category}</span>
               </div>
               <div className="absolute top-4 right-4 flex gap-2">
-                <button onClick={(e) => { e.stopPropagation(); share(); }} className="h-10 w-10 grid place-items-center rounded-full bg-white/90 backdrop-blur shadow-soft hover:scale-105 transition" aria-label="Share"><Share2 size={16} /></button>
+                <button onClick={(e) => { e.stopPropagation(); share(); }} className="h-10 w-10 grid place-items-center rounded-full bg-white/90 backdrop-blur shadow-soft hover:scale-105 transition" aria-label={t('package.share')}><Share2 size={16} /></button>
                 <span onClick={(e) => e.stopPropagation()}><Heart packageId={pkg._id} size={18} /></span>
               </div>
               {gallery.length > 1 && (
                 <span className="absolute bottom-4 right-4 inline-flex items-center gap-1.5 rounded-full bg-ink-900/70 text-white text-xs font-semibold px-3 py-1.5 backdrop-blur">
-                  <StarIcon size={12} className="fill-cream-500 text-cream-500" /> View all {gallery.length} photos
+                  <StarIcon size={12} className="fill-cream-500 text-cream-500" /> {t('package.viewAllPhotosCount', { count: gallery.length })}
                 </span>
               )}
             </div>
@@ -166,7 +215,7 @@ export default function PackageDetail() {
                     <ImageWithFallback src={url} item={pkg} alt="" className="transition-transform duration-500 group-hover:scale-[1.04]" />
                     {i === sideImages.length - 1 && extraCount > 0 && (
                       <span className="absolute inset-0 grid place-items-center bg-ink-900/55 text-white text-sm font-bold">
-                        +{extraCount} more
+                        +{extraCount} {t('package.more')}
                       </span>
                     )}
                   </button>
@@ -183,7 +232,7 @@ export default function PackageDetail() {
                 <span className="text-ink-300">•</span>
                 <span className="inline-flex items-center gap-1"><Clock size={12} /> {pkg.duration}</span>
                 <span className="text-ink-300">•</span>
-                <span className="inline-flex items-center gap-1"><Users size={12} /> Up to {pkg.maxGroupSize || 20}</span>
+                <span className="inline-flex items-center gap-1"><Users size={12} /> {t('package.upTo', { n: pkg.maxGroupSize || 20 })}</span>
               </div>
               <h1 className="mt-2 font-display text-3xl sm:text-4xl lg:text-[2.6rem] font-semibold text-ink-900 leading-tight">
                 {pkg.title}
@@ -192,16 +241,16 @@ export default function PackageDetail() {
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-2.5 py-1 shadow-soft">
                   <Rating value={pkg.rating} size={15} />
                 </span>
-                <span className="text-sm text-ink-500">({pkg.reviewsCount || reviews.length || 0} reviews)</span>
+                <span className="text-sm text-ink-500">({t('package.reviewsCount', { count: pkg.reviewsCount || reviews.length || 0 })})</span>
               </div>
             </div>
             <div className="text-right shrink-0">
-              <p className="text-xs uppercase tracking-widest text-ink-400 font-semibold">From</p>
+              <p className="text-xs uppercase tracking-widest text-ink-400 font-semibold">{t('common.from')}</p>
               <div className="flex items-baseline gap-2 justify-end">
                 <span className="text-4xl font-bold text-brand-700">{formatINR(displayPrice)}</span>
                 {off > 0 && <span className="text-base text-ink-400 line-through">{formatINR(pkg.price)}</span>}
               </div>
-              <p className="text-xs text-ink-500 mt-0.5">per person · incl. taxes</p>
+              <p className="text-xs text-ink-500 mt-0.5">{t('package.perPerson')}</p>
             </div>
           </div>
         </div>
@@ -240,7 +289,7 @@ export default function PackageDetail() {
           <section>
             <div className="flex items-center gap-3">
               <span className="grid h-10 w-10 place-items-center rounded-2xl bg-brand-100 text-brand-700"><StarIcon size={18} /></span>
-              <h2 className="font-display text-2xl font-semibold text-ink-900">Overview</h2>
+              <h2 className="font-display text-2xl font-semibold text-ink-900">{t('package.overview')}</h2>
             </div>
             <p className="mt-4 text-ink-700 leading-relaxed whitespace-pre-line">{pkg.description}</p>
             {pkg.highlights?.length > 0 && (
@@ -260,8 +309,8 @@ export default function PackageDetail() {
               <div className="flex items-center gap-3">
                 <span className="grid h-10 w-10 place-items-center rounded-2xl bg-brand-100 text-brand-700"><Clock size={18} /></span>
                 <div>
-                  <h2 className="font-display text-2xl font-semibold text-ink-900">Day-by-day itinerary</h2>
-                  <p className="text-sm text-ink-500">{pkg.itinerary?.length || 0} days · flexible pacing</p>
+                  <h2 className="font-display text-2xl font-semibold text-ink-900">{t('package.dayByDay')}</h2>
+                  <p className="text-sm text-ink-500">{t('package.daysFlexible', { count: pkg.itinerary?.length || 0 })}</p>
                 </div>
               </div>
               <div className="mt-5">
@@ -274,7 +323,7 @@ export default function PackageDetail() {
             <section>
               <div className="flex items-center gap-3">
                 <span className="grid h-10 w-10 place-items-center rounded-2xl bg-emerald-100 text-emerald-700"><Check size={18} strokeWidth={3} /></span>
-                <h2 className="font-display text-2xl font-semibold text-ink-900">What’s included</h2>
+                <h2 className="font-display text-2xl font-semibold text-ink-900">{t('package.whatsIncluded')}</h2>
               </div>
               <div className="mt-5 grid sm:grid-cols-2 gap-3">
                 {pkg.included?.map((x) => (
@@ -288,7 +337,7 @@ export default function PackageDetail() {
                 <>
                   <div className="flex items-center gap-3 mt-8">
                     <span className="grid h-10 w-10 place-items-center rounded-2xl bg-rose-100 text-rose-600"><X size={18} /></span>
-                    <h2 className="font-display text-2xl font-semibold text-ink-900">Not included</h2>
+                    <h2 className="font-display text-2xl font-semibold text-ink-900">{t('package.notIncluded')}</h2>
                   </div>
                   <div className="mt-5 grid sm:grid-cols-2 gap-3">
                     {pkg.excluded.map((x) => (
@@ -307,7 +356,7 @@ export default function PackageDetail() {
             <section>
               <div className="flex items-center gap-3">
                 <span className="grid h-10 w-10 place-items-center rounded-2xl bg-brand-100 text-brand-700"><StarIcon size={18} /></span>
-                <h2 className="font-display text-2xl font-semibold text-ink-900">Gallery</h2>
+                <h2 className="font-display text-2xl font-semibold text-ink-900">{t('package.tabGallery')}</h2>
               </div>
               <div className="mt-5 grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {gallery.map((url, i) => (
@@ -327,12 +376,12 @@ export default function PackageDetail() {
             <section>
               <div className="flex items-center gap-3">
                 <span className="grid h-10 w-10 place-items-center rounded-2xl bg-brand-100 text-brand-700"><ChevronDown size={18} /></span>
-                <h2 className="font-display text-2xl font-semibold text-ink-900">Frequently asked questions</h2>
+                <h2 className="font-display text-2xl font-semibold text-ink-900">{t('package.faqTitle')}</h2>
               </div>
               <div className="mt-5 space-y-2">
                 {pkg.faq?.length ? (
                   pkg.faq.map((f, i) => <FaqItem key={i} q={f.question} a={f.answer} />)
-                ) : <p className="text-ink-500">No FAQs yet.</p>}
+                ) : <p className="text-ink-500">{t('package.noFaqs')}</p>}
               </div>
             </section>
           )}
@@ -342,7 +391,7 @@ export default function PackageDetail() {
             <section>
               <div className="flex items-center gap-3">
                 <span className="grid h-10 w-10 place-items-center rounded-2xl bg-cream-100 text-brand-700"><MapPin size={18} /></span>
-                <h2 className="font-display text-2xl font-semibold text-ink-900">You may also like</h2>
+                <h2 className="font-display text-2xl font-semibold text-ink-900">{t('package.youMayAlsoLike')}</h2>
               </div>
               <div className="mt-5 grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {related.map((p) => <PackageCard key={p._id} pkg={p} />)}
@@ -359,23 +408,23 @@ export default function PackageDetail() {
                 <span className="text-3xl font-bold text-brand-700">{formatINR(displayPrice)}</span>
                 {off > 0 && <span className="text-sm text-ink-400 line-through">{formatINR(pkg.price)}</span>}
               </div>
-              <p className="text-xs text-ink-500 mt-0.5">per person · incl. taxes</p>
+              <p className="text-xs text-ink-500 mt-0.5">{t('package.perPerson')}</p>
               {off > 0 && (
                 <p className="mt-3 inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700 bg-emerald-50 rounded-full px-2.5 py-1">
-                  <BadgePercent size={12} /> Save {formatINR(pkg.price - pkg.discountPrice)} ({off}%)
+                  <BadgePercent size={12} /> {t('package.save', { amount: formatINR(pkg.price - pkg.discountPrice), percent: off })}
                 </p>
               )}
               <div className="my-5 h-px bg-cream-200" />
               <ul className="space-y-3 text-sm text-ink-700">
                 <li className="flex items-center gap-3"><span className="grid h-8 w-8 place-items-center rounded-lg bg-cream-100 text-brand-700"><MapPin size={15} /></span> {pkg.destination}</li>
                 <li className="flex items-center gap-3"><span className="grid h-8 w-8 place-items-center rounded-lg bg-cream-100 text-brand-700"><Clock size={15} /></span> {pkg.duration}</li>
-                <li className="flex items-center gap-3"><span className="grid h-8 w-8 place-items-center rounded-lg bg-cream-100 text-brand-700"><Users size={15} /></span> Up to {pkg.maxGroupSize || 20} travellers</li>
+                <li className="flex items-center gap-3"><span className="grid h-8 w-8 place-items-center rounded-lg bg-cream-100 text-brand-700"><Users size={15} /></span> {t('package.upToTravellers', { n: pkg.maxGroupSize || 20 })}</li>
                 <li className="flex items-center gap-3"><span className="grid h-8 w-8 place-items-center rounded-lg bg-cream-100 text-brand-700"><Tag size={15} /></span> {pkg.category}</li>
               </ul>
               <Button onClick={scrollToEnquiry} className="w-full mt-6">
-                <Calendar size={15} /> Plan this trip
+                <Calendar size={15} /> {t('package.planThisTrip')}
               </Button>
-              <p className="mt-2 text-center text-[11px] text-ink-400">Free cancellation · Best-price guarantee</p>
+              <p className="mt-2 text-center text-[11px] text-ink-400">{t('package.cancellationNote')}</p>
             </div>
 
             <div id="enquiry">
@@ -388,15 +437,15 @@ export default function PackageDetail() {
       {/* Mobile sticky CTA */}
       <div className="lg:hidden fixed bottom-0 inset-x-0 z-40 border-t border-cream-200 bg-white/95 backdrop-blur px-4 py-3 flex items-center justify-between gap-3 shadow-soft">
         <div className="min-w-0">
-          <p className="text-[10px] uppercase tracking-widest text-ink-400 font-semibold">From</p>
+          <p className="text-[10px] uppercase tracking-widest text-ink-400 font-semibold">{t('common.from')}</p>
           <div className="flex items-baseline gap-1.5">
             <span className="text-lg font-bold text-brand-700">{formatINR(displayPrice)}</span>
             {off > 0 && <span className="text-xs text-ink-400 line-through">{formatINR(pkg.price)}</span>}
           </div>
-          <p className="text-[10px] text-ink-400">per person · incl. taxes</p>
+          <p className="text-[10px] text-ink-400">{t('package.perPerson')}</p>
         </div>
         <Button onClick={scrollToEnquiry} className="shrink-0">
-          <Send size={15} /> Plan this trip
+          <Send size={15} /> {t('package.planThisTrip')}
         </Button>
       </div>
 
@@ -427,6 +476,7 @@ function FaqItem({ q, a }) {
 }
 
 function ReviewsTab({ reviews }) {
+  const { t } = useTranslation();
   const [list, setList] = useState(reviews);
   useEffect(() => setList(reviews), [reviews]);
   const avg = list.length ? list.reduce((s, r) => s + r.rating, 0) / list.length : 0;
@@ -434,18 +484,18 @@ function ReviewsTab({ reviews }) {
     <section>
       <div className="flex items-center gap-3">
         <span className="grid h-10 w-10 place-items-center rounded-2xl bg-cream-100 text-brand-700"><StarIcon size={18} /></span>
-        <h2 className="font-display text-2xl font-semibold text-ink-900">Reviews</h2>
+        <h2 className="font-display text-2xl font-semibold text-ink-900">{t('package.tabReviews')}</h2>
       </div>
       <div className="card mt-5 p-6 flex flex-col sm:flex-row sm:items-center gap-4">
         <div className="text-center sm:text-left">
           <p className="font-display text-4xl font-semibold text-ink-900">{avg.toFixed(1)}</p>
           <Rating value={avg} />
-          <p className="text-xs text-ink-500 mt-1">{list.length} verified reviews</p>
+          <p className="text-xs text-ink-500 mt-1">{t('package.verifiedReviews', { count: list.length })}</p>
         </div>
-        <p className="text-sm text-ink-500 sm:ml-auto">Reviews are public and moderated. We don’t edit them.</p>
+        <p className="text-sm text-ink-500 sm:ml-auto">{t('package.reviewsNote')}</p>
       </div>
       <div className="mt-5 space-y-3">
-        {list.length === 0 && <p className="text-sm text-ink-500">No reviews yet — be the first to share your experience!</p>}
+        {list.length === 0 && <p className="text-sm text-ink-500">{t('package.noReviews')}</p>}
         {list.map((r) => (
           <div key={r._id} className="card p-5">
             <div className="flex items-center gap-3">
@@ -453,7 +503,7 @@ function ReviewsTab({ reviews }) {
                 {r.user?.name?.[0]?.toUpperCase() || 'T'}
               </div>
               <div>
-                <p className="font-semibold text-ink-900">{r.user?.name || 'Traveller'}</p>
+                <p className="font-semibold text-ink-900">{r.user?.name || t('package.traveller')}</p>
                 <p className="text-xs text-ink-500">{timeAgo(r.createdAt)}</p>
               </div>
               <div className="ml-auto"><Rating value={r.rating} /></div>
@@ -462,7 +512,7 @@ function ReviewsTab({ reviews }) {
             <p className="mt-1 text-sm text-ink-700">{r.comment}</p>
             {r.adminReply && (
               <div className="mt-3 rounded-xl bg-cream-50 border border-cream-200 p-3 text-sm text-ink-700">
-                <p className="text-xs font-semibold text-brand-700 mb-1">Reply from Roam Beyond</p>
+                <p className="text-xs font-semibold text-brand-700 mb-1">{t('package.adminReply')}</p>
                 {r.adminReply}
               </div>
             )}
@@ -474,6 +524,7 @@ function ReviewsTab({ reviews }) {
 }
 
 function Lightbox({ images, index, onClose, onNavigate }) {
+  const { t } = useTranslation();
   useEffect(() => {
     const onKey = (e) => {
       if (e.key === 'Escape') onClose();
@@ -492,7 +543,7 @@ function Lightbox({ images, index, onClose, onNavigate }) {
     <div className="fixed inset-0 z-[60] bg-ink-900/95 flex flex-col" onClick={onClose}>
       <div className="flex items-center justify-between px-4 py-3 text-white" onClick={(e) => e.stopPropagation()}>
         <span className="text-sm font-medium">{index + 1} / {images.length}</span>
-        <button onClick={onClose} className="h-10 w-10 grid place-items-center rounded-full bg-white/10 hover:bg-white/20 transition" aria-label="Close">
+        <button onClick={onClose} className="h-10 w-10 grid place-items-center rounded-full bg-white/10 hover:bg-white/20 transition" aria-label={t('common.close')}>
           <X size={20} />
         </button>
       </div>
@@ -501,7 +552,7 @@ function Lightbox({ images, index, onClose, onNavigate }) {
           onClick={(e) => { e.stopPropagation(); onNavigate(Math.max(0, index - 1)); }}
           disabled={index === 0}
           className="h-11 w-11 shrink-0 grid place-items-center rounded-full bg-white/10 hover:bg-white/20 transition disabled:opacity-30"
-          aria-label="Previous"
+          aria-label={t('common.previous')}
         >
           <ChevronLeft size={22} />
         </button>
@@ -510,7 +561,7 @@ function Lightbox({ images, index, onClose, onNavigate }) {
           onClick={(e) => { e.stopPropagation(); onNavigate(Math.min(images.length - 1, index + 1)); }}
           disabled={index === images.length - 1}
           className="h-11 w-11 shrink-0 grid place-items-center rounded-full bg-white/10 hover:bg-white/20 transition disabled:opacity-30"
-          aria-label="Next"
+          aria-label={t('common.next')}
         >
           <ChevronRight size={22} />
         </button>

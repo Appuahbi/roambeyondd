@@ -6,7 +6,7 @@ const createEnquiry = asyncHandler(async (req, res) => {
 
     const enquiry = await enquiryService.createEnquiry(
         req.validatedData.body,
-        req.user.id
+        req.user ? req.user.id : null
     );
 
     return successResponse(
@@ -50,7 +50,8 @@ const getEnquiryById = asyncHandler(async (req, res) => {
 const getAllEnquiries = asyncHandler(async (req, res) => {
 
     const result = await enquiryService.getAllEnquiries(
-        req.query
+        req.query,
+        req.user
     );
 
     return successResponse(
@@ -65,7 +66,8 @@ const updateEnquiry = asyncHandler(async (req, res) => {
 
     const enquiry = await enquiryService.updateEnquiry(
         req.validatedData.params.id,
-        req.validatedData.body
+        req.validatedData.body,
+        req.user
     );
 
     return successResponse(

@@ -1,7 +1,9 @@
+import i18n from '../i18n';
+
 // Currency / Indian number formatter
 export const formatINR = (n) => {
   if (n == null) return '—';
-  return new Intl.NumberFormat('en-IN', {
+  return new Intl.NumberFormat(i18n.language === 'hi' ? 'hi-IN' : 'en-IN', {
     style: 'currency',
     currency: 'INR',
     maximumFractionDigits: 0,
@@ -9,12 +11,12 @@ export const formatINR = (n) => {
 };
 
 export const formatNumber = (n) =>
-  new Intl.NumberFormat('en-IN').format(n || 0);
+  new Intl.NumberFormat(i18n.language === 'hi' ? 'hi-IN' : 'en-IN').format(n || 0);
 
 export const formatDate = (d) => {
   if (!d) return '';
   const dt = new Date(d);
-  return dt.toLocaleDateString('en-IN', {
+  return dt.toLocaleDateString(i18n.language === 'hi' ? 'hi-IN' : 'en-IN', {
     day: 'numeric',
     month: 'short',
     year: 'numeric',
@@ -23,7 +25,9 @@ export const formatDate = (d) => {
 
 export const timeAgo = (d) => {
   if (!d) return '';
+  const locale = i18n.language === 'hi' ? 'hi-IN' : 'en-IN';
   const seconds = Math.floor((Date.now() - new Date(d).getTime()) / 1000);
+  const rtf = new Intl.RelativeTimeFormat(locale, { numeric: 'auto' });
   const intervals = [
     [31536000, 'year'],
     [2592000, 'month'],
@@ -31,11 +35,11 @@ export const timeAgo = (d) => {
     [3600, 'hour'],
     [60, 'minute'],
   ];
-  for (const [secs, label] of intervals) {
-    const v = Math.floor(seconds / secs);
-    if (v >= 1) return `${v} ${label}${v > 1 ? 's' : ''} ago`;
+  for (const [secs, unit] of intervals) {
+    const v = Math.round(seconds / secs);
+    if (v >= 1) return rtf.format(-v, unit);
   }
-  return 'just now';
+  return rtf.format(0, 'second');
 };
 
 export const discountPercent = (price, discount) => {

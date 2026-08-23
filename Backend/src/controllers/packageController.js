@@ -89,11 +89,24 @@ const deletePackage = asyncHandler(async (req, res) => {
 
 });
 
+const uploadPackageImage = asyncHandler(async (req, res) => {
+
+    const result = await packageService.uploadPackageImage(req.file);
+
+    return successResponse(
+        res,
+        result,
+        "Image uploaded successfully"
+    );
+
+});
+
 module.exports = {
     createPackage,
     getPackages,
     getPackageBySlug,
     getPackageBySlugPreview,
     updatePackage,
-    deletePackage
+    deletePackage,
+    uploadPackageImage
 };

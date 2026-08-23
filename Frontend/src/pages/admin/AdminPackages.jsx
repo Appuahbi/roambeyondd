@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import toast from 'react-hot-toast';
-import { Plus, Edit3, Trash2, Star, MapPin, Image as ImageIcon, X, GripVertical } from 'lucide-react';
+import { Plus, Edit3, Trash2, Star, MapPin, Image as ImageIcon, X, GripVertical, Upload } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { adminApi, categoryApi } from '../../api/endpoints';
 import PageHeader from '../../components/admin/PageHeader';
@@ -103,6 +103,9 @@ function FAQBuilder({ items, onChange }) {
 }
 
 function ImageGallery({ items, onChange }) {
+  const fileRef = useRef(null);
+  const [uploading, setUploading] = useState(false);
+
   const add = () => onChange([...items, { url: '', publicId: '' }]);
   const update = (i, field, value) => {
     const next = items.slice();
@@ -110,17 +113,67 @@ function ImageGallery({ items, onChange }) {
     onChange(next);
   };
   const remove = (i) => onChange(items.filter((_, idx) => idx !== i));
+
+  const uploadFiles = async (files) => {
+    const list = Array.from(files || []).filter(Boolean);
+    if (list.length === 0) return;
+    setUploading(true);
+    try {
+      const added = [];
+      for (const file of list) {
+        const fd = new FormData();
+        fd.append('image', file);
+        const res = await adminApi.uploadPackageImage(fd);
+        if (res?.data?.url) added.push({ url: res.data.url, publicId: res.data.publicId || '' });
+      }
+      onChange([...items, ...added]);
+      if (added.length === 0) toast.error('No images were uploaded');
+    } catch (err) {
+      toast.error(err.message || 'Upload failed');
+    } finally {
+      setUploading(false);
+      if (fileRef.current) fileRef.current.value = '';
+    }
+  };
+
   return (
-    <Field label="Images">
+    <Field label="Images" hint="Upload photos, or paste an existing URL + public ID for a Cloudinary-hosted image.">
       <div className="space-y-3">
         {(items || []).map((item, i) => (
           <div key={i} className="flex gap-2 items-center">
+            {item.url ? (
+              <img src={item.url} alt="" className="h-10 w-14 rounded-lg object-cover bg-cream-100 shrink-0" />
+            ) : (
+              <div className="h-10 w-14 rounded-lg bg-cream-100 grid place-items-center text-ink-400 shrink-0">
+                <ImageIcon size={14} />
+              </div>
+            )}
             <input className="input flex-1" placeholder="Image URL" value={item.url} onChange={(e) => update(i, 'url', e.target.value)} />
             <input className="input flex-1" placeholder="Cloudinary public ID" value={item.publicId} onChange={(e) => update(i, 'publicId', e.target.value)} />
             <button type="button" onClick={() => remove(i)} className="text-rose-500 hover:text-rose-700" aria-label="Remove image"><X size={14} /></button>
           </div>
         ))}
-        <button type="button" onClick={add} className="text-sm font-semibold text-brand-700 flex items-center gap-1"><ImageIcon size={14} /> Add image</button>
+        <div className="flex items-center gap-3">
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/*"
+            multiple
+            className="hidden"
+            onChange={(e) => uploadFiles(e.target.files)}
+          />
+          <button
+            type="button"
+            onClick={() => fileRef.current?.click()}
+            disabled={uploading}
+            className="text-sm font-semibold text-brand-700 hover:text-brand-800 flex items-center gap-1 disabled:opacity-50"
+          >
+            {uploading ? 'Uploading…' : <><Upload size={14} /> Upload images</>}
+          </button>
+          <button type="button" onClick={add} className="text-sm font-semibold text-brand-700 hover:text-brand-800 flex items-center gap-1">
+            <ImageIcon size={14} /> Add by URL
+          </button>
+        </div>
       </div>
     </Field>
   );

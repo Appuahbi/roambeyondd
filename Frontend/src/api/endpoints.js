@@ -4,6 +4,9 @@ import { api } from './client';
 export const authApi = {
   register: (data) => api.post('/auth/register', data).then((r) => r.data),
   login: (data) => api.post('/auth/login', data).then((r) => r.data),
+  sendOtp: (data) => api.post('/auth/otp/send', data).then((r) => r.data),
+  verifyOtp: (data) => api.post('/auth/otp/verify', data).then((r) => r.data),
+  phoneLogin: (data) => api.post('/auth/phone-login', data).then((r) => r.data),
   me: () => api.get('/auth/me').then((r) => r.data),
   updateProfile: (data) => api.patch('/auth/me', data).then((r) => r.data),
   changePassword: (data) => api.patch('/auth/change-password', data).then((r) => r.data),
@@ -159,6 +162,8 @@ export const adminApi = {
   createPackage: (data) => api.post('/packages', data).then((r) => r.data),
   updatePackage: (id, data) => api.patch(`/packages/${id}`, data).then((r) => r.data),
   deletePackage: (id) => api.delete(`/packages/${id}`).then((r) => r.data),
+  uploadPackageImage: (formData) =>
+    api.post('/packages/upload-image', formData, { headers: { 'Content-Type': 'multipart/form-data' } }).then((r) => r.data),
 
   // Blogs (admin: full CRUD over existing endpoints)
   blogs: (params) => api.get('/blogs', { params }).then((r) => r.data),

@@ -7,10 +7,7 @@ tags:
     tags:
       - Enquiries
     summary: Submit a tour enquiry
-    description: Creates a new enquiry for a selected tour package. Customer details are auto-populated from the logged-in user's profile.
-    security:
-      - bearerAuth: []
-
+    description: Creates a new enquiry for a selected tour package. Open to everyone — no account or login required.
     requestBody:
       required: true
       content:
@@ -18,10 +15,30 @@ tags:
           schema:
             type: object
             required:
+              - customerName
+              - customerEmail
+              - customerPhone
               - tourPackage
               - travelDate
               - adults
             properties:
+              customerName:
+                type: string
+                minLength: 2
+                maxLength: 80
+                description: Full name of the customer
+                example: Rahul Sharma
+              customerEmail:
+                type: string
+                format: email
+                maxLength: 120
+                description: Customer email
+                example: rahul@example.com
+              customerPhone:
+                type: string
+                pattern: "^\\+?[0-9]{10,15}$"
+                description: Customer phone number (10-15 digits, optional + prefix)
+                example: "9876543210"
               tourPackage:
                 type: string
                 description: Tour package MongoDB ID
@@ -66,22 +83,39 @@ tags:
                   $ref: "#/components/schemas/Enquiry"
       "400":
         description: Validation failed
-      "401":
-        description: Unauthorized
       "404":
         description: Tour package not found
 
+/enquiries/lookup:
   get:
     tags:
       - Enquiries
-    summary: Get logged-in user's enquiries
-    description: Returns all enquiries created by the logged-in user, sorted by newest first.
-    security:
-      - bearerAuth: []
+    summary: Look up an enquiry (public)
+    description: Public endpoint that lets visitors track their enquiry status using the email/phone they submitted with. Optionally refine by enquiry number.
+    parameters:
+      - in: query
+        name: email
+        schema:
+          type: string
+          format: email
+        description: Customer email used at the time of the enquiry
+        example: rahul@example.com
+      - in: query
+        name: phone
+        schema:
+          type: string
+        description: Customer phone used at the time of the enquiry
+        example: "9876543210"
+      - in: query
+        name: enquiryNumber
+        schema:
+          type: string
+        description: Optional enquiry reference number
+        example: ENQ-2026-0001
 
     responses:
       "200":
-        description: Enquiries fetched successfully
+        description: Enquiry found
         content:
           application/json:
             schema:
@@ -92,13 +126,11 @@ tags:
                   example: true
                 message:
                   type: string
-                  example: Enquiries fetched successfully
+                  example: Enquiry found
                 data:
-                  type: array
-                  items:
-                    $ref: "#/components/schemas/Enquiry"
-      "401":
-        description: Unauthorized
+                  $ref: "#/components/schemas/Enquiry"
+      "404":
+        description: No enquiry found matching the provided details
 
 /admin/enquiries:
   get:
@@ -205,46 +237,6 @@ tags:
       "403":
         description: Admin access required
 
-/enquiries/{id}:
-  get:
-    tags:
-      - Enquiries
-    summary: Get enquiry by ID
-    description: Returns a single enquiry. Only the enquiry owner or an admin can view it.
-    security:
-      - bearerAuth: []
-
-    parameters:
-      - in: path
-        name: id
-        required: true
-        schema:
-          type: string
-        description: Enquiry MongoDB ID
-
-    responses:
-      "200":
-        description: Enquiry fetched successfully
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                success:
-                  type: boolean
-                  example: true
-                message:
-                  type: string
-                  example: Enquiry fetched successfully
-                data:
-                  $ref: "#/components/schemas/Enquiry"
-      "401":
-        description: Unauthorized
-      "403":
-        description: Not authorized to view this enquiry
-      "404":
-        description: Enquiry not found
-
 /admin/enquiries/{id}:
   patch:
     tags:
@@ -331,6 +323,43 @@ tags:
                   $ref: "#/components/schemas/Enquiry"
       "400":
         description: Validation failed
+      "401":
+        description: Unauthorized
+      "403":
+        description: Admin access required
+      "404":
+        description: Enquiry not found
+
+  delete:
+    tags:
+      - Admin
+    summary: Delete an enquiry (admin)
+    description: Permanently deletes an enquiry. Requires admin privileges.
+    security:
+      - bearerAuth: []
+
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+        description: Enquiry MongoDB ID
+
+    responses:
+      "200":
+        description: Enquiry deleted successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                message:
+                  type: string
+                  example: Enquiry deleted successfully
       "401":
         description: Unauthorized
       "403":

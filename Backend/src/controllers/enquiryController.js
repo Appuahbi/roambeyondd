@@ -5,8 +5,7 @@ const asyncHandler = require("../middlewares/asyncHandler");
 const createEnquiry = asyncHandler(async (req, res) => {
 
     const enquiry = await enquiryService.createEnquiry(
-        req.validatedData.body,
-        req.user ? req.user.id : null
+        req.validatedData.body
     );
 
     return successResponse(
@@ -18,31 +17,16 @@ const createEnquiry = asyncHandler(async (req, res) => {
 
 });
 
-const getMyEnquiries = asyncHandler(async (req, res) => {
+const lookupEnquiry = asyncHandler(async (req, res) => {
 
-    const enquiries = await enquiryService.getMyEnquiries(
-        req.user.id
-    );
-
-    return successResponse(
-        res,
-        enquiries,
-        "Enquiries fetched successfully"
-    );
-
-});
-
-const getEnquiryById = asyncHandler(async (req, res) => {
-
-    const enquiry = await enquiryService.getEnquiryById(
-        req.params.id,
-        req.user
+    const enquiry = await enquiryService.lookupEnquiry(
+        req.validatedData.query
     );
 
     return successResponse(
         res,
         enquiry,
-        "Enquiry fetched successfully"
+        "Enquiry retrieved successfully"
     );
 
 });
@@ -94,8 +78,7 @@ const deleteEnquiry = asyncHandler(async (req, res) => {
 
 module.exports = {
     createEnquiry,
-    getMyEnquiries,
-    getEnquiryById,
+    lookupEnquiry,
     getAllEnquiries,
     updateEnquiry,
     deleteEnquiry

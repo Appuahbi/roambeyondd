@@ -1,78 +1,13 @@
 tags:
   - name: Authentication
-    description: User authentication APIs
-
-/auth/register:
-  post:
-    tags:
-      - Authentication
-    summary: Register a new user
-    description: Creates a new user account and returns a JWT token.
-    requestBody:
-      required: true
-      content:
-        application/json:
-          schema:
-            type: object
-            required:
-              - name
-              - email
-              - phone
-              - password
-            properties:
-              name:
-                type: string
-                minLength: 2
-                maxLength: 50
-                example: Abhiram
-              email:
-                type: string
-                format: email
-                example: abhiram@example.com
-              phone:
-                type: string
-                pattern: "^[6-9]\\d{9}$"
-                description: 10-digit Indian mobile number starting with 6-9
-                example: "9856452345"
-              password:
-                type: string
-                minLength: 8
-                description: Must contain at least one uppercase letter, one lowercase letter, and one number
-                example: Password@123
-
-    responses:
-      "201":
-        description: User registered successfully
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                success:
-                  type: boolean
-                  example: true
-                message:
-                  type: string
-                  example: User registered successfully
-                data:
-                  type: object
-                  properties:
-                    token:
-                      type: string
-                      description: JWT token
-                    user:
-                      $ref: "#/components/schemas/User"
-      "400":
-        description: Validation failed
-      "409":
-        description: Email is already registered
+    description: Staff (admin/agent) authentication APIs
 
 /auth/login:
   post:
     tags:
       - Authentication
-    summary: Login user
-    description: Authenticates a user with email and password, returns a JWT token.
+    summary: Staff login
+    description: Authenticates staff (admin/agent) with email and password. Public visitors do not have accounts; they browse, enquire and chat as guests.
     requestBody:
       required: true
       content:
@@ -86,7 +21,7 @@ tags:
               email:
                 type: string
                 format: email
-                example: abhiram@example.com
+                example: admin@roambeyond.in
               password:
                 type: string
                 minLength: 1
@@ -123,8 +58,8 @@ tags:
   get:
     tags:
       - Authentication
-    summary: Get current user profile
-    description: Returns the authenticated user's profile information.
+    summary: Get current staff profile
+    description: Returns the authenticated staff user's profile information.
     security:
       - bearerAuth: []
 
@@ -183,7 +118,7 @@ tags:
     tags:
       - Authentication
     summary: Change password
-    description: Changes the authenticated user's password. Requires the current password for verification.
+    description: Changes the authenticated staff user's password. Requires the current password for verification.
     security:
       - bearerAuth: []
 
@@ -252,147 +187,3 @@ tags:
                   example: Logged out successfully
       "401":
         description: Unauthorized — missing or invalid token
-
-/auth/forgot-password:
-  post:
-    tags:
-      - Authentication
-    summary: Request password reset
-    description: Sends a password reset email to the provided address. Always returns success to prevent email enumeration.
-    requestBody:
-      required: true
-      content:
-        application/json:
-          schema:
-            type: object
-            required:
-              - email
-            properties:
-              email:
-                type: string
-                format: email
-                example: abhiram@example.com
-
-    responses:
-      "200":
-        description: Password reset email sent
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                success:
-                  type: boolean
-                  example: true
-                message:
-                  type: string
-                  example: Password reset email sent
-      "400":
-        description: Validation failed
-      "503":
-        description: Service temporarily unavailable
-
-/auth/reset-password:
-  post:
-    tags:
-      - Authentication
-    summary: Reset password with token
-    description: Resets the user's password using the token received via email. The token is valid for 15 minutes and can only be used once.
-    requestBody:
-      required: true
-      content:
-        application/json:
-          schema:
-            type: object
-            required:
-              - token
-              - newPassword
-            properties:
-              token:
-                type: string
-                description: The 64-character hex token from the reset email
-                example: "a1b2c3d4e5f6..."
-              newPassword:
-                type: string
-                minLength: 8
-                description: New password — must contain uppercase, lowercase, and a number
-                example: NewPass@456
-
-    responses:
-      "200":
-        description: Password reset successful
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                success:
-                  type: boolean
-                  example: true
-                message:
-                  type: string
-                  example: Password reset successful
-      "400":
-        description: Invalid or expired reset token
-      "503":
-        description: Service temporarily unavailable
-
-/auth/verify-email:
-  get:
-    tags:
-      - Authentication
-    summary: Verify email address
-    description: Verifies the user's email address using the token sent during registration. The token is valid for 24 hours and can only be used once.
-    parameters:
-      - in: query
-        name: token
-        required: true
-        schema:
-          type: string
-        description: The 64-character hex token from the verification email
-        example: "a1b2c3d4e5f6..."
-
-    responses:
-      "200":
-        description: Email verified successfully
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                success:
-                  type: boolean
-                  example: true
-                message:
-                  type: string
-                  example: Email verified successfully
-      "400":
-        description: Invalid or expired verification token
-
-/auth/resend-verification:
-  post:
-    tags:
-      - Authentication
-    summary: Resend verification email
-    description: Sends a new verification email to the authenticated user. Requires the user to be logged in. If the email is already verified, returns success without sending.
-    security:
-      - bearerAuth: []
-
-    responses:
-      "200":
-        description: Verification email sent
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                success:
-                  type: boolean
-                  example: true
-                message:
-                  type: string
-                  example: Verification email sent
-      "401":
-        description: Unauthorized — missing or invalid token
-      "503":
-        description: Service temporarily unavailable

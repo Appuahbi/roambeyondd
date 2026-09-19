@@ -1,17 +1,10 @@
 import { api } from './client';
 
-// ---- Auth ----
+// ---- Auth (admin/agent staff only) ----
 export const authApi = {
-  register: (data) => api.post('/auth/register', data).then((r) => r.data),
   login: (data) => api.post('/auth/login', data).then((r) => r.data),
-  sendOtp: (data) => api.post('/auth/otp/send', data).then((r) => r.data),
-  verifyOtp: (data) => api.post('/auth/otp/verify', data).then((r) => r.data),
-  phoneLogin: (data) => api.post('/auth/phone-login', data).then((r) => r.data),
   me: () => api.get('/auth/me').then((r) => r.data),
-  updateProfile: (data) => api.patch('/auth/me', data).then((r) => r.data),
   changePassword: (data) => api.patch('/auth/change-password', data).then((r) => r.data),
-  forgotPassword: (data) => api.post('/auth/forgot-password', data).then((r) => r.data),
-  resetPassword: (data) => api.post('/auth/reset-password', data).then((r) => r.data),
   logout: () => api.post('/auth/logout').then((r) => r.data),
 };
 
@@ -60,31 +53,12 @@ export const reviewApi = {
 // ---- Enquiries ----
 export const enquiryApi = {
   create: (data) => api.post('/enquiries', data).then((r) => r.data),
-  mine: () => api.get('/enquiries').then((r) => r.data),
-  byId: (id) => api.get(`/enquiries/${id}`).then((r) => r.data),
+  lookup: (params) => api.get('/enquiries/lookup', { params }).then((r) => r.data),
 };
 
 // ---- Trip Requests ----
 export const tripRequestApi = {
   create: (data) => api.post('/trip-requests', data).then((r) => r.data),
-  mine: () => api.get('/trip-requests').then((r) => r.data),
-  byId: (id) => api.get(`/trip-requests/${id}`).then((r) => r.data),
-};
-
-// ---- Wishlist ----
-export const wishlistApi = {
-  list: () => api.get('/wishlist').then((r) => r.data),
-  add: (packageId) => api.post(`/wishlist/${packageId}`).then((r) => r.data),
-  remove: (packageId) => api.delete(`/wishlist/${packageId}`).then((r) => r.data),
-  check: (packageId) => api.get(`/wishlist/check/${packageId}`).then((r) => r.data),
-};
-
-// ---- Notifications ----
-export const notificationApi = {
-  list: () => api.get('/notifications').then((r) => r.data),
-  unreadCount: () => api.get('/notifications/unread-count').then((r) => r.data),
-  markRead: (id) => api.patch(`/notifications/${id}/read`).then((r) => r.data),
-  readAll: () => api.patch('/notifications/read-all').then((r) => r.data),
 };
 
 // ---- AI chat assistant ----

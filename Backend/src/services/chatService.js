@@ -15,13 +15,14 @@ const MAX_TOOL_CONTENT = 4000;
 const SYSTEM_PROMPT = `
 You are Travis AI, the friendly AI travel assistant for RoamBeyond Travels (an Indian travel company selling tour packages). Always refer to yourself as Travis AI.
 
-Your job is to help logged-in travelers discover packages, understand inclusions, get quick answers from site content, and submit trip requests.
+Your job is to help travelers discover packages, understand inclusions, get quick answers from site content, and submit trip requests. Visitors do not need an account — guests can submit trip requests too.
 
 Rules:
 - ONLY talk about tour packages, trip planning, itineraries, FAQs, and site information. Stay on-topic.
 - Use the provided tools to look things up. NEVER invent package names, prices, durations, or details — always ground answers in tool output.
 - When a user asks for package recommendations, ask for destination, budget, or duration if missing, then call search_packages.
 - When the user wants to plan a custom trip, collect destination, startDate, endDate, groupSize, adults, and optional budget before calling create_trip_request. If any required detail is missing, ask for it. Confirm the details with the user before creating the request.
+- For guests (users who have NOT logged in), also collect their customerName and at least one of customerEmail or customerPhone before calling create_trip_request. If the guest refuses to share contact details, politely explain that a contact is needed so a travel agent can follow up.
 - Prices are in Indian Rupees (INR).
 - Be warm, concise, and helpful. Use short bullet lists when listing packages.
 - Format answers with clean Markdown: use headings, bold, and bullet lists so they render nicely in the chat widget.
@@ -344,8 +345,6 @@ const getMyTripRequests = async (user) => {
 };
 
 const createTripRequestForChat = async (user, args) => {
-    if (!user) return { error: "You must be logged in to submit a trip request." };
-
     const {
         destination,
         startDate,
@@ -356,7 +355,10 @@ const createTripRequestForChat = async (user, args) => {
         adults,
         children,
         preferences,
-        specialRequests
+        specialRequests,
+        customerName,
+        customerEmail,
+        customerPhone
     } = args;
 
     const errors = {};
@@ -366,6 +368,17 @@ const createTripRequestForChat = async (user, args) => {
     if (startDate && endDate && Date.parse(endDate) < Date.parse(startDate)) errors.endDate = "endDate must be after startDate";
     if (!groupSize || Number(groupSize) < 1) errors.groupSize = "groupSize must be at least 1";
     if (!adults || Number(adults) < 1) errors.adults = "adults must be at least 1";
+
+    // For guests (not logged in), require a name and at least one contact method.
+    if (!user) {
+        const name = (customerName || "").trim();
+        const email = (customerEmail || "").trim();
+        const phone = (customerPhone || "").trim();
+        if (!name) errors.customerName = "customerName is required for guest requests";
+        const hasEmail = email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+        const hasPhone = phone && /^\d{10}$/.test(phone);
+        if (!hasEmail && !hasPhone) errors.contact = "a valid customerEmail or customerPhone (10 digits) is required for guest requests";
+    }
 
     if (Object.keys(errors).length > 0) {
         return { error: "Missing or invalid trip details.", fields: errors };
@@ -385,12 +398,17 @@ const createTripRequestForChat = async (user, args) => {
         preferences: Array.isArray(preferences)
             ? preferences.filter((p) => VALID_PREFERENCES.includes(p))
             : [],
-        specialRequests: specialRequests || ""
+        specialRequests: specialRequests || "",
+        ...(user ? {} : {
+            customerName: (customerName || "").trim(),
+            customerEmail: (customerEmail || "").trim() || undefined,
+            customerPhone: (customerPhone || "").trim() || undefined
+        })
     };
 
     const tripRequest = await createTripRequestService({
-        userId: user.id,
-        userName: user.name || "A traveler",
+        userId: user?.id ?? null,
+        userName: user?.name || data.customerName || "A guest",
         data
     });
 
@@ -490,7 +508,7 @@ const TOOLS = [
         type: "function",
         function: {
             name: "create_trip_request",
-            description: "Submit a custom trip request for the logged-in user. All required fields must be present.",
+            description: "Submit a custom trip request for the logged-in user, or a guest by providing customerName plus customerEmail or customerPhone. All required fields must be present.",
             parameters: {
                 type: "object",
                 properties: {
@@ -507,7 +525,10 @@ const TOOLS = [
                         items: { type: "string" },
                         description: "Preferences from: adventure, culture, food, luxury, budget, family, romantic, spiritual, wildlife, beach"
                     },
-                    specialRequests: { type: "string", description: "Any special requests" }
+                    specialRequests: { type: "string", description: "Any special requests" },
+                    customerName: { type: "string", description: "Guest's full name (required when the user is not logged in)" },
+                    customerEmail: { type: "string", description: "Guest's email address; required for guests unless customerPhone is provided" },
+                    customerPhone: { type: "string", description: "Guest's 10-digit phone number; required for guests unless customerEmail is provided" }
                 },
                 required: ["destination", "startDate", "endDate", "groupSize", "adults"]
             }

@@ -18,7 +18,9 @@ export default function useSocket(onNotification, enabled = false) {
   useEffect(() => {
     if (!enabled) return;
 
-    socket = io('/', {
+    const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || '/';
+
+    socket = io(SOCKET_URL, {
       withCredentials: true,
       transports: ['websocket', 'polling'],
     });

@@ -5,7 +5,23 @@ const tripRequestSchema = new mongoose.Schema(
         user: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "User",
-            required: true
+            default: null
+        },
+        customerName: {
+            type: String,
+            trim: true,
+            default: ""
+        },
+        customerEmail: {
+            type: String,
+            trim: true,
+            lowercase: true,
+            default: ""
+        },
+        customerPhone: {
+            type: String,
+            trim: true,
+            default: ""
         },
         destination: {
             type: String,

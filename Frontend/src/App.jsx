@@ -3,7 +3,6 @@ import { lazy, Suspense, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 
 import Layout from './components/layout/Layout';
-import ProtectedRoute from './components/layout/ProtectedRoute';
 import AdminRoute from './components/layout/AdminRoute';
 import AdminLayout from './components/admin/AdminLayout';
 
@@ -65,12 +64,7 @@ const BlogDetail = lazyPage(() => import('./pages/BlogDetail'));
 const Contact = lazyPage(() => import('./pages/Contact'));
 const SearchResults = lazyPage(() => import('./pages/SearchResults'));
 const Login = lazyPage(() => import('./pages/Login'));
-const Register = lazyPage(() => import('./pages/Register'));
-const ForgotPassword = lazyPage(() => import('./pages/ForgotPassword'));
-const ResetPassword = lazyPage(() => import('./pages/ResetPassword'));
-const Dashboard = lazyPage(() => import('./pages/Dashboard'));
-const Wishlist = lazyPage(() => import('./pages/Wishlist'));
-const Notifications = lazyPage(() => import('./pages/Notifications'));
+const TrackEnquiry = lazyPage(() => import('./pages/TrackEnquiry'));
 const NotFound = lazyPage(() => import('./pages/NotFound'));
 
 const AdminOverview = lazyAdmin(() => import('./pages/admin/AdminOverview'));
@@ -91,8 +85,8 @@ export default function App() {
   const initialized = useSelector((s) => s.auth.initialized);
 
   useEffect(() => {
-    // Restore the session (httpOnly cookie) on first load. For anonymous
-    // users this resolves quickly to a 401 and leaves them signed out.
+    // Restore an admin/agent session (httpOnly cookie) on first load. For
+    // anonymous visitors this resolves quickly to a 401 and leaves them out.
     if (!initialized) {
       dispatch(fetchMeThunk());
     }
@@ -110,39 +104,13 @@ export default function App() {
         <Route path="blogs/:slug" element={<BlogDetail />} />
         <Route path="contact" element={<Contact />} />
         <Route path="search" element={<SearchResults />} />
-
-        <Route path="login" element={<Login />} />
-        <Route path="register" element={<Register />} />
-        <Route path="forgot-password" element={<ForgotPassword />} />
-        <Route path="reset-password" element={<ResetPassword />} />
-
-        <Route
-          path="dashboard"
-          element={
-            <ProtectedRoute>
-              <Dashboard />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="wishlist"
-          element={
-            <ProtectedRoute>
-              <Wishlist />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="notifications"
-          element={
-            <ProtectedRoute>
-              <Notifications />
-            </ProtectedRoute>
-          }
-        />
+        <Route path="track-enquiry" element={<TrackEnquiry />} />
 
         <Route path="*" element={<NotFound />} />
       </Route>
+
+      {/* Staff sign-in — kept outside the admin guard so signed-out staff can reach it */}
+      <Route path="/admin/login" element={<Login />} />
 
       {/* Admin panel — uses its own layout (no public navbar/footer) */}
       <Route

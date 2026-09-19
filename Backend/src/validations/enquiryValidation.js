@@ -50,6 +50,19 @@ const createEnquirySchema = z.object({
 
 });
 
+/* Public enquiry lookup — guests follow up on an enquiry by matching their
+   email/phone (optionally narrowed by enquiry number). No auth required. */
+const lookupEnquirySchema = z.object({
+    query: z.object({
+        email: z.string().trim().email().optional(),
+        phone: z.string().trim().regex(/^[6-9]\d{9}$/, "Invalid phone").optional(),
+        enquiryNumber: z.string().trim().max(30).optional(),
+    }).refine(
+        (q) => q.email !== undefined || q.phone !== undefined || q.enquiryNumber !== undefined,
+        { message: "Provide your email, phone or enquiry number" }
+    ),
+});
+
 const updateEnquiryAdminSchema = z.object({
     params: z.object({
         id: z.string().regex(/^[0-9a-fA-F]{24}$/, "Invalid enquiry ID")
@@ -104,7 +117,7 @@ const updateEnquiryAdminSchema = z.object({
     )
 });
 
-const getEnquiryByIdSchema = z.object({
+const deleteEnquirySchema = z.object({
     params: z.object({
         id: z.string().regex(/^[0-9a-fA-F]{24}$/, "Invalid enquiry ID")
     })
@@ -112,6 +125,7 @@ const getEnquiryByIdSchema = z.object({
 
 module.exports = {
     createEnquirySchema,
+    lookupEnquirySchema,
     updateEnquiryAdminSchema,
-    getEnquiryByIdSchema
+    deleteEnquirySchema,
 };

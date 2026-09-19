@@ -1,35 +1,21 @@
-import { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
-import { useSelector } from 'react-redux';
-import { Calendar, Users, MessageSquare, User, Phone, Mail, Send } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Calendar, Users, MessageSquare, User, Phone, Mail, Send, FileSearch } from 'lucide-react';
 import { enquiryApi, tripRequestApi } from '../../api/endpoints';
 import { useReveal } from '../../hooks/useReveal';
 import Button from '../ui/Button';
 
 export default function PackageEnquiryForm({ pkg, mode = 'enquiry' }) {
   const { t } = useTranslation();
-  const user = useSelector((s) => s.auth.user);
   const [ref, shown] = useReveal();
-  const [form, setForm] = useState(() => ({
-    name: user?.name || '', email: user?.email || '', phone: user?.phone || '',
+  const [form, setForm] = useState({
+    name: '', email: '', phone: '',
     travelDate: '', adults: 2, children: 0, notes: ''
-  }));
+  });
   const [busy, setBusy] = useState(false);
-  const navigate = useNavigate();
-  const location = useLocation();
-
-  useEffect(() => {
-    if (user) {
-      setForm((f) => ({
-        ...f,
-        name: f.name || user.name || '',
-        email: f.email || user.email || '',
-        phone: f.phone || user.phone || ''
-      }));
-    }
-  }, [user]);
+  const [submitted, setSubmitted] = useState(false);
 
   const normalizePhone = (raw) => {
     const digits = (raw || '').replace(/\D/g, '');
@@ -38,16 +24,14 @@ export default function PackageEnquiryForm({ pkg, mode = 'enquiry' }) {
 
   const submit = async (e) => {
     e.preventDefault();
-    // Custom trip requests still require an account (backend enforces it).
-    if (!user && mode === 'trip') {
-      navigate('/login', { state: { from: location.pathname } });
-      return;
-    }
     if (!form.travelDate) return toast.error(t('enquiry.pickDate'));
     setBusy(true);
     try {
       if (mode === 'trip') {
         await tripRequestApi.create({
+          customerName: form.name,
+          customerEmail: form.email,
+          customerPhone: normalizePhone(form.phone),
           destination: pkg?.destination || 'Custom',
           startDate: form.travelDate,
           endDate: form.travelDate,
@@ -70,13 +54,9 @@ export default function PackageEnquiryForm({ pkg, mode = 'enquiry' }) {
         });
         toast.success(t('enquiry.submitted'));
       }
-      setForm({ name: user?.name || '', email: user?.email || '', phone: user?.phone || '', travelDate: '', adults: 2, children: 0, notes: '' });
+      setForm({ name: '', email: '', phone: '', travelDate: '', adults: 2, children: 0, notes: '' });
+      setSubmitted(true);
     } catch (err) {
-      // Guest enquiries are rejected when the feature is off — send them to login.
-      if (!user && mode === 'enquiry' && err.response?.status === 403) {
-        navigate('/login', { state: { from: location.pathname } });
-        return;
-      }
       toast.error(err.message || t('enquiry.couldNotSubmit'));
     } finally {
       setBusy(false);
@@ -98,11 +78,9 @@ export default function PackageEnquiryForm({ pkg, mode = 'enquiry' }) {
       <p className="mt-1 text-sm text-ink-500">
         {t('enquiry.respond24h')}
       </p>
-      {!user && (
-        <p className="mt-1 text-xs font-semibold text-brand-700">
-          {t('enquiry.guestNote')}
-        </p>
-      )}
+      <p className="mt-1 text-xs font-semibold text-brand-700">
+        {t('enquiry.guestNote')}
+      </p>
 
       <div className="mt-5 grid sm:grid-cols-2 gap-3">
         <Field icon={User} placeholder={t('enquiry.fullName')} value={form.name} onChange={(v) => setForm({ ...form, name: v })} required />
@@ -126,6 +104,12 @@ export default function PackageEnquiryForm({ pkg, mode = 'enquiry' }) {
           />
         </div>
       </div>
+
+      {submitted && (
+        <Link to="/track-enquiry" className="btn-secondary w-full mt-4 text-center text-sm">
+          <FileSearch size={16} /> {t('enquiry.trackLink')}
+        </Link>
+      )}
 
       <Button type="submit" loading={busy} className="w-full mt-4">
         <Send size={16} /> {mode === 'trip' ? t('enquiry.sendTripRequest') : t('enquiry.sendEnquiry')}

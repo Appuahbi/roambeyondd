@@ -7,10 +7,12 @@ const { clearDashboardCache } = require("./dashboardService");
 const createTripRequest = async ({ userId, userName, data }) => {
     const tripRequest = await TripRequest.create({
         ...data,
-        user: userId
+        user: userId || null
     });
 
     await clearDashboardCache();
+
+    const labelName = userName || data.customerName || "A guest";
 
     const admins = await User.find({ role: "admin" }).select("_id");
     await notifyMultiple(
@@ -18,13 +20,13 @@ const createTripRequest = async ({ userId, userName, data }) => {
         {
             type: "trip_request_update",
             title: "New Trip Request",
-            message: `${userName} requested a trip to ${data.destination}`,
+            message: `${labelName} requested a trip to ${data.destination}`,
             data: { tripRequestId: tripRequest._id }
         }
     );
 
     // Real-time email alert to admins — fire and forget, never blocks the response.
-    sendNewTripRequestAlert({ ...tripRequest.toObject(), userName }).catch(() => {});
+    sendNewTripRequestAlert({ ...tripRequest.toObject(), userName: labelName }).catch(() => {});
 
     return tripRequest;
 };

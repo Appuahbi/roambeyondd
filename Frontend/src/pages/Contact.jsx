@@ -1,12 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { useSelector } from 'react-redux';
 import toast from 'react-hot-toast';
 import { Mail, Phone, MapPin, Send, MessageSquare, User, Clock } from 'lucide-react';
 import Button from '../components/ui/Button';
 import Seo from '../components/seo/Seo';
-import { contactApi, tripRequestApi, siteContentApi } from '../api/endpoints';
+import { contactApi, siteContentApi } from '../api/endpoints';
 import { useReveal } from '../hooks/useReveal';
 
 export default function Contact() {
@@ -16,7 +15,6 @@ export default function Contact() {
   const [ref, shown] = useReveal();
   const [form, setForm] = useState({ name: '', email: '', phone: '', subject: isCustom ? t('contact.customSubject') : '', message: '' });
   const [busy, setBusy] = useState(false);
-  const user = useSelector((s) => s.auth.user);
   const [contactInfo, setContactInfo] = useState({ phone: '+91 99999 99999', email: 'hello@roambeyond.in', address: 'Connaught Place, New Delhi 110001', hours: 'Mon–Sat, 9am – 7pm IST' });
 
   useEffect(() => {
@@ -32,23 +30,7 @@ export default function Contact() {
     e.preventDefault();
     setBusy(true);
     try {
-      if (isCustom) {
-        if (user) {
-          await tripRequestApi.create({
-            destination: form.subject || t('contact.customSubject'),
-            startDate: new Date(),
-            endDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
-            groupSize: 2,
-            adults: 2,
-            children: 0,
-            specialRequests: form.message,
-          });
-        } else {
-          await contactApi.create({ ...form, subject: form.subject || t('contact.customSubject') });
-        }
-      } else {
-        await contactApi.create(form);
-      }
+      await contactApi.create({ ...form, subject: form.subject || t('contact.customSubject') });
       toast.success(t('contact.sent'));
       setForm({ name: '', email: '', phone: '', subject: '', message: '' });
     } catch (err) {

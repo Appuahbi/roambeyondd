@@ -2,6 +2,9 @@ const { z } = require("zod");
 
 const createTripRequestSchema = z.object({
     body: z.object({
+        customerName: z.string().trim().max(100).optional().default(""),
+        customerEmail: z.string().trim().email().optional().default(""),
+        customerPhone: z.string().trim().regex(/^[6-9]\d{9}$/, "Please enter a valid Indian mobile number").optional().default(""),
         destination: z.string().trim().min(2).max(100),
         startDate: z.string().refine(val => !isNaN(Date.parse(val)), { message: "Invalid start date" }),
         endDate: z.string().refine(val => !isNaN(Date.parse(val)), { message: "Invalid end date" }),

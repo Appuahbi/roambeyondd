@@ -4,7 +4,7 @@ const isDev = process.env.NODE_ENV === "development";
 
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: isDev ? 10000 : 100,
+    max: isDev ? 10000 : 600,
     skip: () => isDev,
     message: {
         success: false,
@@ -14,7 +14,7 @@ const limiter = rateLimit({
 
 const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: isDev ? 10000 : 10,
+    max: isDev ? 10000 : 30,
     skip: () => isDev,
     message: {
         success: false,
@@ -24,7 +24,7 @@ const authLimiter = rateLimit({
 
 const forgotPasswordLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: isDev ? 10000 : 5,
+    max: isDev ? 10000 : 10,
     skip: () => isDev,
     message: {
         success: false,
@@ -32,17 +32,17 @@ const forgotPasswordLimiter = rateLimit({
     },
 });
 
-const otpLimiter = rateLimit({
+const lookupLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: isDev ? 10000 : 10,
+    max: isDev ? 10000 : 100,
     skip: () => isDev,
     message: {
         success: false,
-        message: "Too many OTP requests. Please try again later.",
+        message: "Too many lookup attempts. Please try again later.",
     },
 });
 
 module.exports = limiter;
 module.exports.authLimiter = authLimiter;
 module.exports.forgotPasswordLimiter = forgotPasswordLimiter;
-module.exports.otpLimiter = otpLimiter;
+module.exports.lookupLimiter = lookupLimiter;

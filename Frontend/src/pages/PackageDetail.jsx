@@ -9,7 +9,6 @@ import clsx from 'clsx';
 import { packageApi, reviewApi, adminApi } from '../api/endpoints';
 import Button from '../components/ui/Button';
 import ImageWithFallback from '../components/ui/ImageWithFallback';
-import Heart from '../components/ui/Heart';
 import Rating from '../components/ui/Rating';
 import Skeleton from '../components/ui/Skeleton';
 import ItineraryTimeline from '../components/sections/ItineraryTimeline';
@@ -195,7 +194,6 @@ export default function PackageDetail() {
               </div>
               <div className="absolute top-4 right-4 flex gap-2">
                 <button onClick={(e) => { e.stopPropagation(); share(); }} className="h-10 w-10 grid place-items-center rounded-full bg-white/90 backdrop-blur shadow-soft hover:scale-105 transition" aria-label={t('package.share')}><Share2 size={16} /></button>
-                <span onClick={(e) => e.stopPropagation()}><Heart packageId={pkg._id} size={18} /></span>
               </div>
               {gallery.length > 1 && (
                 <span className="absolute bottom-4 right-4 inline-flex items-center gap-1.5 rounded-full bg-ink-900/70 text-white text-xs font-semibold px-3 py-1.5 backdrop-blur">

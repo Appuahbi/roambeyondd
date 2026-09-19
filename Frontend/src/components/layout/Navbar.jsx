@@ -1,17 +1,8 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
 import { useTranslation } from 'react-i18next';
-import toast from 'react-hot-toast';
-import {
-  Menu, X, Search, User as UserIcon, Heart, LogOut,
-  ChevronDown, Bell, LayoutDashboard, MapPin, ShieldCheck
-} from 'lucide-react';
+import { Menu, X, Search, FileSearch } from 'lucide-react';
 import clsx from 'clsx';
-import { logoutThunk } from '../../store/authSlice';
-import { fetchUnreadCountThunk, addNotification } from '../../store/notificationsSlice';
-import { fetchWishlistThunk } from '../../store/wishlistSlice';
-import useSocket from '../../hooks/useSocket';
 import { LOGO_WORDMARK } from '../../utils/branding';
 import LanguageSwitcher from '../i18n/LanguageSwitcher';
 
@@ -19,16 +10,10 @@ export default function Navbar() {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
-  const [userMenu, setUserMenu] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [q, setQ] = useState('');
   const navigate = useNavigate();
-  const dispatch = useDispatch();
   const location = useLocation();
-  const user = useSelector((s) => s.auth.user);
-  const unread = useSelector((s) => s.notifications.unread);
-  const wishlistCount = useSelector((s) => s.wishlist.ids.length);
-  const userMenuRef = useRef(null);
 
   const NAV_LINKS = [
     { to: '/', label: t('nav.home') },
@@ -37,11 +22,6 @@ export default function Navbar() {
     { to: '/blogs', label: t('nav.blogs') },
     { to: '/contact', label: t('nav.contact') },
   ];
-
-  useSocket((notification) => {
-    dispatch(addNotification(notification));
-    toast(notification.title, { icon: '🔔' });
-  }, !!user);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 12);
@@ -53,25 +33,7 @@ export default function Navbar() {
   useEffect(() => {
     setOpen(false);
     setSearchOpen(false);
-    setUserMenu(false);
   }, [location.pathname]);
-
-  useEffect(() => {
-    if (user) {
-      dispatch(fetchUnreadCountThunk());
-      dispatch(fetchWishlistThunk());
-    }
-  }, [user, dispatch]);
-
-  useEffect(() => {
-    const onClick = (e) => {
-      if (userMenuRef.current && !userMenuRef.current.contains(e.target)) {
-        setUserMenu(false);
-      }
-    };
-    document.addEventListener('mousedown', onClick);
-    return () => document.removeEventListener('mousedown', onClick);
-  }, []);
 
   const submitSearch = (e) => {
     e.preventDefault();
@@ -140,78 +102,15 @@ export default function Navbar() {
 
             <LanguageSwitcher className="hidden sm:inline-flex text-white hover:bg-white/10 hover:text-white" />
 
-            {user && (
-              <Link
-                to="/wishlist"
-                aria-label={t('nav.wishlist')}
-                className="relative h-10 w-10 inline-flex items-center justify-center rounded-full hover:bg-white/10 text-white transition-colors"
-              >
-                <Heart size={18} />
-                {wishlistCount > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 grid place-items-center min-w-[18px] h-[18px] px-1 text-[10px] font-bold rounded-full bg-brand-600 text-white ring-2 ring-brand-800">
-                    {wishlistCount}
-                  </span>
-                )}
-              </Link>
-            )}
+            <Link
+              to="/track-enquiry"
+              aria-label={t('track.title')}
+              className="hidden md:inline-flex h-10 w-10 items-center justify-center rounded-full hover:bg-white/10 text-white transition-colors"
+            >
+              <FileSearch size={18} />
+            </Link>
 
-            {user && (
-              <Link
-                to="/notifications"
-                aria-label={t('nav.notifications')}
-                className="relative h-10 w-10 inline-flex items-center justify-center rounded-full hover:bg-white/10 text-white transition-colors"
-              >
-                <Bell size={18} />
-                {unread > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 grid place-items-center min-w-[18px] h-[18px] px-1 text-[10px] font-bold rounded-full bg-cream-500 text-ink-900 ring-2 ring-brand-800">
-                    {unread}
-                  </span>
-                )}
-              </Link>
-            )}
-
-            {user ? (
-              <div className="relative hidden lg:block" ref={userMenuRef}>
-                <button
-                  onClick={() => setUserMenu((v) => !v)}
-                  className="ml-1 inline-flex items-center gap-2 rounded-full bg-white/10 hover:bg-white/15 px-2.5 py-1.5 text-sm font-semibold text-white ring-1 ring-white/20 transition-colors"
-                >
-                  <div className="grid h-7 w-7 place-items-center rounded-full bg-brand-600 text-white text-xs font-bold">
-                    {user?.name?.[0]?.toUpperCase() || 'U'}
-                  </div>
-                  <ChevronDown size={14} className={clsx('transition-transform', userMenu && 'rotate-180')} />
-                </button>
-                {userMenu && (
-                  <div className="absolute right-0 mt-2 w-60 rounded-2xl border border-cream-200 bg-white shadow-float p-1.5 animate-fade-up">
-                    <div className="px-3 py-2 border-b border-cream-100">
-                      <p className="text-sm font-semibold text-ink-900 line-clamp-1">{user?.name}</p>
-                      <p className="text-xs text-ink-500 line-clamp-1">{user?.email}</p>
-                    </div>
-                    <Link to="/dashboard" className="menu-item"><LayoutDashboard size={16} /> {t('nav.dashboard')}</Link>
-                    {(user?.role === 'admin' || user?.role === 'agent') && (
-                      <Link to="/admin" className="menu-item text-brand-700 font-semibold">
-                        <ShieldCheck size={16} /> {t('nav.adminPanel')}
-                      </Link>
-                    )}
-                    <Link to="/wishlist" className="menu-item"><Heart size={16} /> {t('nav.wishlist')}</Link>
-                    <Link to="/dashboard?tab=trips" className="menu-item"><MapPin size={16} /> {t('nav.myTrips')}</Link>
-                    <Link to="/dashboard?tab=profile" className="menu-item"><UserIcon size={16} /> {t('nav.profile')}</Link>
-                    <div className="my-1 border-t border-cream-100" />
-                    <button
-                      onClick={() => { dispatch(logoutThunk()); navigate('/'); }}
-                      className="menu-item w-full text-rose-600 hover:bg-rose-50"
-                    >
-                      <LogOut size={16} /> {t('nav.signOut')}
-                    </button>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="hidden sm:flex items-center gap-2 ml-2">
-                <Link to="/login" className="btn-ghost h-10 px-4">{t('nav.signIn')}</Link>
-                <Link to="/register" className="btn-primary h-10 px-4">{t('nav.getStarted')}</Link>
-              </div>
-            )}
+            <Link to="/contact" className="btn-primary h-10 px-4">{t('nav.enquire')}</Link>
 
             <button
               onClick={() => setOpen(true)}
@@ -277,38 +176,8 @@ export default function Navbar() {
               </div>
             </div>
 
-            {/* User profile card (when logged in) */}
-            {user && (
-              <>
-                <div className="mx-3 mt-3 p-3 rounded-2xl bg-brand-soft-gradient border border-brand-100/70 shadow-card">
-                <div className="flex items-center gap-2.5">
-                  <div className="grid h-9 w-9 place-items-center rounded-full bg-brand-600 text-white text-xs font-bold shrink-0 shadow-sm">
-                    {user?.name?.[0]?.toUpperCase() || 'U'}
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-sm font-semibold text-ink-900 line-clamp-1">{user?.name}</p>
-                    <p className="text-xs text-ink-500 line-clamp-1">{user?.email}</p>
-                  </div>
-                </div>
-                {(user?.role === 'admin' || user?.role === 'agent') && (
-                  <Link
-                    to="/admin"
-                    onClick={() => setOpen(false)}
-                    className="mt-2 flex items-center gap-2 w-full px-2.5 py-1.5 rounded-lg bg-white/80 border border-brand-200/50 text-xs font-semibold text-brand-700 hover:bg-white transition-colors"
-                  >
-                    <ShieldCheck size={13} /> {t('nav.adminPanel')}
-                  </Link>
-                )}
-              </div>
-              <div className="mx-3 mt-3 flex items-center justify-between px-0.5">
-                <span className="text-xs font-medium text-ink-400">{t('nav.language')}</span>
-                <LanguageSwitcher className="border border-cream-200 bg-white" />
-              </div>
-              </>
-            )}
-
             {/* Links */}
-            <nav className="flex-1 overflow-y-auto px-3 pt-1 pb-2">
+            <nav className="flex-1 overflow-y-auto px-3 pt-4 pb-2">
               <div className="space-y-px">
                 {NAV_LINKS.map((l) => (
                   <NavLink
@@ -329,65 +198,26 @@ export default function Navbar() {
                   </NavLink>
                 ))}
 
-                {user && (
-                  <>
-                    <div className="my-2 border-t border-cream-100" />
-                    <Link to="/notifications" onClick={() => setOpen(false)} className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm font-medium text-ink-700 hover:bg-cream-100 transition-colors">
-                      <Bell size={16} /> {t('nav.notifications')}
-                      {unread > 0 && (
-                        <span className="ml-auto grid place-items-center min-w-[18px] h-[18px] px-1 text-[10px] font-bold rounded-full bg-cream-500 text-ink-900">
-                          {unread}
-                        </span>
-                      )}
-                    </Link>
-                    <Link to="/dashboard" onClick={() => setOpen(false)} className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm font-medium text-ink-700 hover:bg-cream-100 transition-colors">
-                      <LayoutDashboard size={16} /> {t('nav.dashboard')}
-                    </Link>
-                    <Link to="/wishlist" onClick={() => setOpen(false)} className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm font-medium text-ink-700 hover:bg-cream-100 transition-colors">
-                      <Heart size={16} /> {t('nav.wishlist')}
-                      {wishlistCount > 0 && (
-                        <span className="ml-auto grid place-items-center min-w-[18px] h-[18px] px-1 text-[10px] font-bold rounded-full bg-brand-600 text-white">
-                          {wishlistCount}
-                        </span>
-                      )}
-                    </Link>
-                    <Link to="/dashboard?tab=trips" onClick={() => setOpen(false)} className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm font-medium text-ink-700 hover:bg-cream-100 transition-colors">
-                      <MapPin size={16} /> {t('nav.myTrips')}
-                    </Link>
-                    <Link to="/dashboard?tab=profile" onClick={() => setOpen(false)} className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm font-medium text-ink-700 hover:bg-cream-100 transition-colors">
-                      <UserIcon size={16} /> {t('nav.profile')}
-                    </Link>
-                  </>
-                )}
+                <div className="my-2 border-t border-cream-100" />
+                <Link to="/track-enquiry" onClick={() => setOpen(false)} className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm font-medium text-ink-700 hover:bg-cream-100 transition-colors">
+                  <FileSearch size={16} /> {t('track.title')}
+                </Link>
               </div>
             </nav>
 
             {/* Footer */}
             <div className="px-3 pt-3 pb-3 border-t border-cream-100">
-              {user ? (
-                <button
-                  onClick={() => { dispatch(logoutThunk()); navigate('/'); }}
-                  className="flex items-center justify-center gap-2 w-full py-2 rounded-lg text-sm font-medium text-rose-600 hover:bg-rose-50 transition-colors"
-                >
-                  <LogOut size={15} /> {t('nav.signOut')}
-                </button>
-              ) : (
-                <>
-                  <div className="mb-2 flex items-center justify-between">
-                    <span className="text-xs font-medium text-ink-400">{t('nav.language')}</span>
-                    <LanguageSwitcher className="border border-cream-200 bg-white" />
-                  </div>
-                  <div className="flex gap-2">
-                    <Link to="/login" className="btn-secondary flex-1 text-center text-sm">{t('nav.signIn')}</Link>
-                    <Link to="/register" className="btn-primary flex-1 text-center text-sm">{t('nav.getStarted')}</Link>
-                  </div>
-                </>
-              )}
+              <div className="mb-2 flex items-center justify-between">
+                <span className="text-xs font-medium text-ink-400">{t('nav.language')}</span>
+                <LanguageSwitcher className="border border-cream-200 bg-white" />
+              </div>
+              <Link to="/contact" onClick={() => setOpen(false)} className="btn-primary flex-1 text-center text-sm">
+                {t('nav.enquire')}
+              </Link>
             </div>
           </div>
         </div>
       )}
-
     </>
   );
 }

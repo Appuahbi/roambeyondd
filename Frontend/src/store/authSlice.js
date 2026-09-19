@@ -6,6 +6,7 @@ The auth token now lives in an httpOnly cookie (set by the backend) and is
 NOT persisted in localStorage, so an XSS cannot exfiltrate it. The `token`
 field below is only an in-memory presence marker for the current SPA session;
 after a full page reload the app restores the session via /auth/me.
+Login is restricted to admin/agent staff — the public site is enquiry-only.
 */
 const initialState = {
   user: null,
@@ -19,30 +20,6 @@ export const loginThunk = createAsyncThunk(
   async (payload, { rejectWithValue }) => {
     try {
       const res = await authApi.login(payload);
-      return res.data;
-    } catch (e) {
-      return rejectWithValue(e.message);
-    }
-  }
-);
-
-export const registerThunk = createAsyncThunk(
-  'auth/register',
-  async (payload, { rejectWithValue }) => {
-    try {
-      const res = await authApi.register(payload);
-      return res.data;
-    } catch (e) {
-      return rejectWithValue(e.message);
-    }
-  }
-);
-
-export const phoneLoginThunk = createAsyncThunk(
-  'auth/phoneLogin',
-  async (payload, { rejectWithValue }) => {
-    try {
-      const res = await authApi.phoneLogin(payload);
       return res.data;
     } catch (e) {
       return rejectWithValue(e.message);
@@ -87,17 +64,6 @@ const authSlice = createSlice({
         s.token = a.payload.token;
       })
       .addCase(loginThunk.rejected, (s) => { s.loading = false; })
-      .addCase(phoneLoginThunk.pending, (s) => { s.loading = true; })
-      .addCase(phoneLoginThunk.fulfilled, (s, a) => {
-        s.loading = false;
-        s.user = a.payload.user;
-        s.token = a.payload.token;
-      })
-      .addCase(phoneLoginThunk.rejected, (s) => { s.loading = false; })
-      .addCase(registerThunk.fulfilled, (s, a) => {
-        s.user = a.payload.user;
-        s.token = a.payload.token;
-      })
       .addCase(fetchMeThunk.fulfilled, (s, a) => {
         s.user = a.payload;
         s.initialized = true;

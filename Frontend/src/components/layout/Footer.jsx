@@ -85,12 +85,10 @@ export default function Footer() {
           </div>
 
           <div className="lg:col-span-2">
-            <h4 className="text-sm font-semibold text-cream-100">{t('footer.account')}</h4>
+            <h4 className="text-sm font-semibold text-cream-100">{t('footer.support')}</h4>
             <ul className="mt-3 space-y-2 text-sm text-cream-200/80">
-              <li><Link to="/login" className="hover:text-white transition-colors">{t('footer.signIn')}</Link></li>
-              <li><Link to="/register" className="hover:text-white transition-colors">{t('footer.createAccount')}</Link></li>
-              <li><Link to="/dashboard" className="hover:text-white transition-colors">{t('footer.myDashboard')}</Link></li>
-              <li><Link to="/wishlist" className="hover:text-white transition-colors">{t('footer.wishlist')}</Link></li>
+              <li><Link to="/contact" className="hover:text-white transition-colors">{t('footer.enquire')}</Link></li>
+              <li><Link to="/track-enquiry" className="hover:text-white transition-colors">{t('footer.trackEnquiry')}</Link></li>
             </ul>
           </div>
 

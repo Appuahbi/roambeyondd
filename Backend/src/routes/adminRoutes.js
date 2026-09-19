@@ -9,7 +9,7 @@ const validate = require("../middlewares/validate");
 const enquiryController = require("../controllers/enquiryController");
 const packageController = require("../controllers/packageController");
 
-const { updateEnquiryAdminSchema, getEnquiryByIdSchema } = require("../validations/enquiryValidation");
+const { updateEnquiryAdminSchema, deleteEnquirySchema } = require("../validations/enquiryValidation");
 const { getPackageBySlugSchema } = require("../validations/packageValidation");
 
 router.get(
@@ -39,7 +39,7 @@ router.delete(
     "/enquiries/:id",
     protect,
     authorize("admin"),
-    validate(getEnquiryByIdSchema),
+    validate(deleteEnquirySchema),
     enquiryController.deleteEnquiry
 );
 

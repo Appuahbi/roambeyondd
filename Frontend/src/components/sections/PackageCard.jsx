@@ -2,14 +2,12 @@ import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Clock, MapPin, Users, Sparkles, ArrowRight } from 'lucide-react';
 import Rating from '../ui/Rating';
-import Heart from '../ui/Heart';
 import ImageWithFallback from '../ui/ImageWithFallback';
 import { formatINR, discountPercent } from '../../utils/format';
 
 export default function PackageCard({ pkg, compact = false }) {
   const { t } = useTranslation();
   if (!pkg) return null;
-  const id = pkg._id || pkg.id;
   const slug = pkg.slug;
   if (!slug) return null;
   const off = discountPercent(pkg.price, pkg.discountPrice);
@@ -38,10 +36,6 @@ export default function PackageCard({ pkg, compact = false }) {
               {off}% {t('package.off')}
             </span>
           )}
-        </div>
-
-        <div className="absolute top-3.5 right-3.5 z-10">
-          <Heart packageId={id} />
         </div>
 
         <div className="absolute bottom-3.5 left-3.5">

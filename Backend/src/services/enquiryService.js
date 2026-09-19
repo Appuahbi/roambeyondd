@@ -9,27 +9,12 @@ const User = require("../models/User");
 
 const AGENT_ROLE = "agent";
 
-const createEnquiry = async (enquiryData, userId) => {
+const createEnquiry = async (enquiryData) => {
     const { tourPackage, travelDate, adults, children, notes, customerName, customerEmail, customerPhone } = enquiryData;
-
-    const isGuest = !userId;
-
-    // Guest submissions are only allowed when explicitly enabled.
-    if (isGuest && process.env.ALLOW_GUEST_ENQUIRIES !== "true") {
-        throw new AppError("Please log in to submit an enquiry", 403);
-    }
 
     const tour = await TourPackage.findById(tourPackage);
     if (!tour) {
         throw new AppError("Tour package not found", 404);
-    }
-
-    let user = null;
-    if (!isGuest) {
-        user = await User.findById(userId);
-        if (!user) {
-            throw new AppError("User not found", 404);
-        }
     }
 
     let enquiry;
@@ -38,10 +23,10 @@ const createEnquiry = async (enquiryData, userId) => {
     while (retries--) {
         try {
             enquiry = await Enquiry.create({
-                user: user ? user._id : null,
-                customerName: customerName || (user && user.name),
-                customerEmail: customerEmail || (user && user.email),
-                customerPhone: customerPhone || (user && user.phone),
+                user: null,
+                customerName,
+                customerEmail,
+                customerPhone,
                 tourPackage: tour._id,
                 travelDate,
                 adults,
@@ -58,7 +43,6 @@ const createEnquiry = async (enquiryData, userId) => {
     await clearDashboardCache();
 
     await enquiry.populate([
-        { path: "user", select: "name email phone" },
         { path: "tourPackage", select: "title category destination duration price images slug" },
         { path: "assignedTo", select: "name email" }
     ]);
@@ -69,30 +53,29 @@ const createEnquiry = async (enquiryData, userId) => {
     return enquiry;
 };
 
-const getMyEnquiries = async (userId) => {
-    return await Enquiry.find({ user: userId })
-        .populate("tourPackage", "title category destination duration price images slug")
-        .populate("assignedTo", "name email")
-        .sort("-createdAt");
-};
+const lookupEnquiry = async ({ email, phone, enquiryNumber }) => {
+    const filter = {};
 
-const getEnquiryById = async (enquiryId, user) => {
-    const enquiry = await Enquiry.findById(enquiryId)
-        .populate("user", "name email phone")
-        .populate("tourPackage", "title category destination duration price images slug")
-        .populate("assignedTo", "name email");
-
-    if (!enquiry) {
-        throw new AppError("Enquiry not found", 404);
+    if (enquiryNumber) {
+        filter.enquiryNumber = enquiryNumber;
+    }
+    if (email) {
+        filter.customerEmail = email.toLowerCase();
+    }
+    if (phone) {
+        filter.customerPhone = phone;
     }
 
-    const isAdmin = user.role === "admin";
-    const isOwner = enquiry.user && enquiry.user._id.toString() === user.id;
-    const isAssignedAgent = user.role === AGENT_ROLE &&
-        enquiry.assignedTo && enquiry.assignedTo._id.toString() === user.id;
+    if (!filter.enquiryNumber && !filter.customerEmail && !filter.customerPhone) {
+        throw new AppError("Please provide your email, phone or enquiry number", 400);
+    }
 
-    if (!isAdmin && !isOwner && !isAssignedAgent) {
-        throw new AppError("You are not authorized to view this enquiry", 403);
+    const enquiry = await Enquiry.findOne(filter)
+        .populate("tourPackage", "title category destination duration price images slug")
+        .sort("-createdAt");
+
+    if (!enquiry) {
+        throw new AppError("No enquiry found with those details", 404);
     }
 
     return enquiry;
@@ -252,8 +235,7 @@ const deleteEnquiry = async (enquiryId) => {
 
 module.exports = {
     createEnquiry,
-    getMyEnquiries,
-    getEnquiryById,
+    lookupEnquiry,
     getAllEnquiries,
     updateEnquiry,
     deleteEnquiry

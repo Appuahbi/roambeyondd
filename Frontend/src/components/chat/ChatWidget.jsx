@@ -54,7 +54,6 @@ export default function ChatWidget() {
   const dispatch = useDispatch();
   const { t } = useTranslation();
   const { open, messages, sending } = useSelector((s) => s.chat);
-  const user = useSelector((s) => s.auth.user);
   const [text, setText] = useState('');
   const [elapsed, setElapsed] = useState(0);
   const scrollRef = useRef(null);
@@ -102,8 +101,6 @@ export default function ChatWidget() {
     return () => clearInterval(id);
   }, [sending]);
 
-  if (!user) return null;
-
   const submit = (e) => {
     e?.preventDefault?.();
     const value = text.trim();
@@ -146,7 +143,7 @@ export default function ChatWidget() {
               <>
                 <div className="flex justify-start">
                   <p className="max-w-[85%] rounded-2xl rounded-bl-md bg-cream-100 px-4 py-2.5 text-sm text-ink-900">
-                    {t('chat.greeting', { name: user?.name?.split(' ')[0] || t('chat.there') })}
+                    {t('chat.greeting', { name: t('chat.there') })}
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2 pt-1">

@@ -8,8 +8,8 @@ const { createTripRequest: createTripRequestService } = require("../services/tri
 const createTripRequest = asyncHandler(async (req, res) => {
     const data = req.validatedData?.body || req.body;
     const tripRequest = await createTripRequestService({
-        userId: req.user.id,
-        userName: req.user.name,
+        userId: req.user?.id || null,
+        userName: req.user?.name || data.customerName || "",
         data
     });
 

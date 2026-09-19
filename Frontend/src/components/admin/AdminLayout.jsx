@@ -95,7 +95,7 @@ export default function AdminLayout() {
 
   const onLogout = async () => {
     await dispatch(logoutThunk());
-    navigate('/login');
+    navigate('/admin/login');
   };
 
   return (

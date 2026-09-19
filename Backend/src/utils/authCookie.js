@@ -8,7 +8,7 @@ const setAuthCookie = (res, token) => {
     res.cookie(AUTH_COOKIE_NAME, token, {
         httpOnly: true,
         secure: isProduction(),
-        sameSite: "lax",
+        sameSite: isProduction() ? "none" : "lax",
         maxAge: JWT_EXPIRE_MS,
         path: "/"
     });
@@ -18,7 +18,7 @@ const clearAuthCookie = (res) => {
     res.clearCookie(AUTH_COOKIE_NAME, {
         httpOnly: true,
         secure: isProduction(),
-        sameSite: "lax",
+        sameSite: isProduction() ? "none" : "lax",
         path: "/"
     });
 };
